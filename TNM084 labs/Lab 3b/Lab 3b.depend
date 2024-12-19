@@ -51,24 +51,35 @@
 1504148332 c:\users\ingemar\documents\testa på windows\tnm084\common\windows\wglew.h
 	<windows.h>
 
-1668075512 source:c:\users\ingemar\documents\testa på windows\tnm084\common\windows\microglut.c
-	<windows.h>
-	"glew.h"
-	<gl/gl.h>
-	"MicroGlut.h"
+1478269306 source:c:\users\ingemar\documents\testa på windows\tnm084\lab 3bx\noise\cellular.c
+	<math.h>
 	<stdio.h>
-	<io.h>
-	<fcntl.h>
+	"cellular.h"
 
-1641979870 c:\users\ingemar\documents\testa på windows\tnm084\common\windows\microglut.h
+1619241508 c:\users\ingemar\documents\testa på windows\tnm084\lab 3bx\noise\cellular.h
 
-1668936810 source:c:\users\ingemar\documents\testa på windows\tnm084\lab 3ax\lab3a.cpp
+1383935336 source:c:\users\ingemar\documents\testa på windows\tnm084\lab 3bx\noise\noise1234.c
+	"noise1234.h"
+
+1619241466 c:\users\ingemar\documents\testa på windows\tnm084\lab 3bx\noise\noise1234.h
+
+1383935926 source:c:\users\ingemar\documents\testa på windows\tnm084\lab 3bx\noise\simplexnoise1234.c
+	"simplexnoise1234.h"
+
+1619241556 c:\users\ingemar\documents\testa på windows\tnm084\lab 3bx\noise\simplexnoise1234.h
+
+1668940091 source:c:\users\ingemar\documents\testa på windows\tnm084\lab 3bx\lab3b.cpp
 	"MicroGlut.h"
 	"GL_utilities.h"
 	"VectorUtils4.h"
 	"LittleOBJLoader.h"
 	"LoadTGA.h"
-	"glugg.h"
+	<math.h>
+	"noise1234.h"
+	"simplexnoise1234.h"
+	"cellular.h"
+
+1668940214 c:\users\ingemar\documents\testa på windows\tnm084\common\windows\microglut.h
 
 1668075056 c:\users\ingemar\documents\testa på windows\tnm084\common\vectorutils4.h
 	<OpenGL/gl3.h>
@@ -87,16 +98,6 @@
 	<string.h>
 	<math.h>
 	"VectorUtils4.h"
-
-1668936412 c:\users\ingemar\documents\testa på windows\tnm084\lab 3ax\glugg.h
-	"VectorUtils4.h"
-	<math.h>
-	<stdlib.h>
-	<stdio.h>
-	<string.h>
-	"GL_utilities.h"
-	"VectorUtils4.h"
-	"glugg.h"
 
 1675154278 source:c:\users\ingem\onedrive\desktop\labbar 2023\tnm084 labs\common\gl_utilities.c
 	<Windows.h>
@@ -161,13 +162,16 @@
 
 1621844928 c:\users\ingem\onedrive\desktop\labbar 2023\tnm084 labs\common\windows\microglut.h
 
-1698936433 source:c:\users\ingem\onedrive\desktop\labbar 2023\tnm084 labs\lab 3a\lab3a.cpp
+1698936491 source:c:\users\ingem\onedrive\desktop\labbar 2023\tnm084 labs\lab 3b\lab3b.cpp
 	"MicroGlut.h"
 	"GL_utilities.h"
 	"VectorUtils4.h"
 	"LittleOBJLoaderX.h"
 	"LoadTGA.h"
-	"glugg.h"
+	<math.h>
+	"noise1234.h"
+	"simplexnoise1234.h"
+	"cellular.h"
 
 1694452438 c:\users\ingem\onedrive\desktop\labbar 2023\tnm084 labs\common\vectorutils4.h
 	<OpenGL/gl3.h>
@@ -187,130 +191,20 @@
 	<math.h>
 	"VectorUtils4.h"
 
-1668936412 c:\users\ingem\onedrive\desktop\labbar 2023\tnm084 labs\lab 3a\glugg.h
-	"VectorUtils4.h"
-	<math.h>
-	<stdlib.h>
-	<stdio.h>
-	<string.h>
-	"GL_utilities.h"
-	"VectorUtils4.h"
-	"glugg.h"
+1619241466 c:\users\ingem\onedrive\desktop\labbar 2023\tnm084 labs\lab 3b\noise\noise1234.h
 
-1733142946 source:c:\users\simon\downloads\tnm084-labs-2024\tnm084 labs\common\gl_utilities.c
-	<Windows.h>
-	<stdlib.h>
-	<stdio.h>
-	<stddef.h>
-	<string.h>
-	"GL_utilities.h"
+1619241556 c:\users\ingem\onedrive\desktop\labbar 2023\tnm084 labs\lab 3b\noise\simplexnoise1234.h
 
-1733142946 c:\users\simon\downloads\tnm084-labs-2024\tnm084 labs\common\gl_utilities.h
-	<OpenGL/gl3.h>
-	"glew.h"
-	<GL/gl.h>
-	<GL/gl.h>
-	<stdlib.h>
+1619241508 c:\users\ingem\onedrive\desktop\labbar 2023\tnm084 labs\lab 3b\noise\cellular.h
 
-1733142946 c:\users\simon\downloads\tnm084-labs-2024\tnm084 labs\common\windows\glew.h
-	<stddef.h>
-	<inttypes.h>
-	<stdint.h>
-	<inttypes.h>
-	<Availability.h>
-	<OpenGL/glu.h>
-	<GL/glu.h>
-
-1733142946 source:c:\users\simon\downloads\tnm084-labs-2024\tnm084 labs\common\loadtga.c
-	"LoadTGA.h"
-
-1733142946 c:\users\simon\downloads\tnm084-labs-2024\tnm084 labs\common\loadtga.h
-	<OpenGL/gl3.h>
-	"glew.h"
-	<GL/gl.h>
-	<stdio.h>
-	<stdlib.h>
-	<string.h>
-
-1733142946 source:c:\users\simon\downloads\tnm084-labs-2024\tnm084 labs\common\windows\glew.c
-	"glew.h"
-	"wglew.h"
-	<GL/glxew.h>
-	<stddef.h>
-	<dlfcn.h>
-	<stdio.h>
-	<stdlib.h>
-	<stdlib.h>
-	<string.h>
-	<AvailabilityMacros.h>
-	<dlfcn.h>
-	<mach-o/dyld.h>
-
-1733142947 c:\users\simon\downloads\tnm084-labs-2024\tnm084 labs\common\windows\wglew.h
-	<windows.h>
-
-1733142947 source:c:\users\simon\downloads\tnm084-labs-2024\tnm084 labs\common\windows\microglut.c
-	<windows.h>
-	"glew.h"
-	<gl/gl.h>
-	"MicroGlut.h"
-	<stdio.h>
-	<io.h>
-	<fcntl.h>
-
-1733142947 c:\users\simon\downloads\tnm084-labs-2024\tnm084 labs\common\windows\microglut.h
-
-1733148172 source:c:\users\simon\downloads\tnm084-labs-2024\tnm084 labs\lab 3a\lab3a.cpp
-	"MicroGlut.h"
-	"GL_utilities.h"
-	"VectorUtils4.h"
-	"LittleOBJLoader.h"
-	"LoadTGA.h"
-	"glugg.h"
-
-1733142946 c:\users\simon\downloads\tnm084-labs-2024\tnm084 labs\common\vectorutils4.h
-	<OpenGL/gl3.h>
-	"glew.h"
-	<GL/gl.h>
+1478269306 source:c:\users\ingem\onedrive\desktop\labbar 2023\tnm084 labs\lab 3b\noise\cellular.c
 	<math.h>
 	<stdio.h>
+	"cellular.h"
 
-1733142946 c:\users\simon\downloads\tnm084-labs-2024\tnm084 labs\common\littleobjloader.h
-	<OpenGL/gl3.h>
-	"glew.h"
-	<GL/gl.h>
-	"VectorUtils4.h"
-	<stdio.h>
-	<stdlib.h>
-	<string.h>
-	<math.h>
-	"VectorUtils4.h"
+1383935336 source:c:\users\ingem\onedrive\desktop\labbar 2023\tnm084 labs\lab 3b\noise\noise1234.c
+	"noise1234.h"
 
-1733142948 c:\users\simon\downloads\tnm084-labs-2024\tnm084 labs\lab 3a\glugg.h
-	"VectorUtils4.h"
-	<math.h>
-	<stdlib.h>
-	<stdio.h>
-	<string.h>
-	"GL_utilities.h"
-	"VectorUtils4.h"
-	"glugg.h"
-
-1733148172 source:c:\users\simon\tnm084\tnm084project\lab 3a\lab3a.cpp
-	"MicroGlut.h"
-	"GL_utilities.h"
-	"VectorUtils4.h"
-	"LittleOBJLoader.h"
-	"LoadTGA.h"
-	"glugg.h"
-
-1733142948 c:\users\simon\tnm084\tnm084project\lab 3a\glugg.h
-	"VectorUtils4.h"
-	<math.h>
-	<stdlib.h>
-	<stdio.h>
-	<string.h>
-	"GL_utilities.h"
-	"VectorUtils4.h"
-	"glugg.h"
+1383935926 source:c:\users\ingem\onedrive\desktop\labbar 2023\tnm084 labs\lab 3b\noise\simplexnoise1234.c
+	"simplexnoise1234.h"
 

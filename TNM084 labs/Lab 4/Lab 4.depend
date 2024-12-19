@@ -1,4 +1,99 @@
 # depslib dependency file v1.0
+1634882843 source:c:\users\ingemar\documents\testa på windows\common\gl_utilities.c
+	<Windows.h>
+	<stdlib.h>
+	<stdio.h>
+	<stddef.h>
+	<string.h>
+	"GL_utilities.h"
+
+1601079010 c:\users\ingemar\documents\testa på windows\common\gl_utilities.h
+	<OpenGL/gl3.h>
+	"glew.h"
+	<GL/gl.h>
+	<GL/gl.h>
+	<stdlib.h>
+
+1504148332 c:\users\ingemar\documents\testa på windows\common\windows\glew.h
+	<stddef.h>
+	<inttypes.h>
+	<stdint.h>
+	<inttypes.h>
+	<Availability.h>
+	<OpenGL/glu.h>
+	<GL/glu.h>
+
+1635949203 source:c:\users\ingemar\documents\testa på windows\common\littleobjloader.c
+	"LittleOBJLoader.h"
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<math.h>
+	"VectorUtils3.h"
+
+1615488958 c:\users\ingemar\documents\testa på windows\common\littleobjloader.h
+	<OpenGL/gl3.h>
+	"glew.h"
+	<GL/gl.h>
+	"VectorUtils3.h"
+
+1622439322 c:\users\ingemar\documents\testa på windows\common\vectorutils3.h
+	<OpenGL/gl3.h>
+	"glew.h"
+	<GL/gl.h>
+	<math.h>
+	<stdio.h>
+
+1613375762 source:c:\users\ingemar\documents\testa på windows\common\loadtga.c
+	"LoadTGA.h"
+
+1601078976 c:\users\ingemar\documents\testa på windows\common\loadtga.h
+	<OpenGL/gl3.h>
+	"glew.h"
+	<GL/gl.h>
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+
+1622439330 source:c:\users\ingemar\documents\testa på windows\common\vectorutils3.c
+	"VectorUtils3.h"
+
+1504148332 source:c:\users\ingemar\documents\testa på windows\common\windows\glew.c
+	"glew.h"
+	"wglew.h"
+	<GL/glxew.h>
+	<stddef.h>
+	<dlfcn.h>
+	<stdio.h>
+	<stdlib.h>
+	<stdlib.h>
+	<string.h>
+	<AvailabilityMacros.h>
+	<dlfcn.h>
+	<mach-o/dyld.h>
+
+1504148332 c:\users\ingemar\documents\testa på windows\common\windows\wglew.h
+	<windows.h>
+
+1635490273 source:c:\users\ingemar\documents\testa på windows\common\windows\microglut.c
+	<windows.h>
+	"glew.h"
+	<gl/gl.h>
+	"MicroGlut.h"
+	<stdio.h>
+	<io.h>
+	<fcntl.h>
+
+1621844928 c:\users\ingemar\documents\testa på windows\common\windows\microglut.h
+
+1638087834 source:c:\users\ingemar\documents\testa på windows\lab 4\lab4.c
+	<OpenGL/gl3.h>
+	"GL_utilities.h"
+	"VectorUtils3.h"
+	"LittleOBJLoader.h"
+	"LoadTGA.h"
+	"MicroGlut.h"
+
 1638088276 source:c:\users\ingemar\documents\testa på windows\tnm084\common\gl_utilities.c
 	<Windows.h>
 	<stdlib.h>
@@ -51,7 +146,7 @@
 1504148332 c:\users\ingemar\documents\testa på windows\tnm084\common\windows\wglew.h
 	<windows.h>
 
-1668075512 source:c:\users\ingemar\documents\testa på windows\tnm084\common\windows\microglut.c
+1668940655 source:c:\users\ingemar\documents\testa på windows\tnm084\common\windows\microglut.c
 	<windows.h>
 	"glew.h"
 	<gl/gl.h>
@@ -60,15 +155,14 @@
 	<io.h>
 	<fcntl.h>
 
-1641979870 c:\users\ingemar\documents\testa på windows\tnm084\common\windows\microglut.h
+1668940214 c:\users\ingemar\documents\testa på windows\tnm084\common\windows\microglut.h
 
-1668936810 source:c:\users\ingemar\documents\testa på windows\tnm084\lab 3ax\lab3a.cpp
-	"MicroGlut.h"
+1669795260 source:c:\users\ingemar\documents\testa på windows\tnm084\lab 4\lab4.c
 	"GL_utilities.h"
 	"VectorUtils4.h"
 	"LittleOBJLoader.h"
 	"LoadTGA.h"
-	"glugg.h"
+	"MicroGlut.h"
 
 1668075056 c:\users\ingemar\documents\testa på windows\tnm084\common\vectorutils4.h
 	<OpenGL/gl3.h>
@@ -88,15 +182,12 @@
 	<math.h>
 	"VectorUtils4.h"
 
-1668936412 c:\users\ingemar\documents\testa på windows\tnm084\lab 3ax\glugg.h
-	"VectorUtils4.h"
-	<math.h>
-	<stdlib.h>
-	<stdio.h>
-	<string.h>
+1669795788 source:c:\users\ingemar\documents\testa på windows\tnm084\lab 4x\lab4.cpp
 	"GL_utilities.h"
 	"VectorUtils4.h"
-	"glugg.h"
+	"LittleOBJLoader.h"
+	"LoadTGA.h"
+	"MicroGlut.h"
 
 1675154278 source:c:\users\ingem\onedrive\desktop\labbar 2023\tnm084 labs\common\gl_utilities.c
 	<Windows.h>
@@ -161,13 +252,12 @@
 
 1621844928 c:\users\ingem\onedrive\desktop\labbar 2023\tnm084 labs\common\windows\microglut.h
 
-1698936433 source:c:\users\ingem\onedrive\desktop\labbar 2023\tnm084 labs\lab 3a\lab3a.cpp
-	"MicroGlut.h"
+1698936546 source:c:\users\ingem\onedrive\desktop\labbar 2023\tnm084 labs\lab 4\lab4.cpp
 	"GL_utilities.h"
 	"VectorUtils4.h"
 	"LittleOBJLoaderX.h"
 	"LoadTGA.h"
-	"glugg.h"
+	"MicroGlut.h"
 
 1694452438 c:\users\ingem\onedrive\desktop\labbar 2023\tnm084 labs\common\vectorutils4.h
 	<OpenGL/gl3.h>
@@ -186,16 +276,6 @@
 	<string.h>
 	<math.h>
 	"VectorUtils4.h"
-
-1668936412 c:\users\ingem\onedrive\desktop\labbar 2023\tnm084 labs\lab 3a\glugg.h
-	"VectorUtils4.h"
-	<math.h>
-	<stdlib.h>
-	<stdio.h>
-	<string.h>
-	"GL_utilities.h"
-	"VectorUtils4.h"
-	"glugg.h"
 
 1733142946 source:c:\users\simon\downloads\tnm084-labs-2024\tnm084 labs\common\gl_utilities.c
 	<Windows.h>
@@ -260,13 +340,12 @@
 
 1733142947 c:\users\simon\downloads\tnm084-labs-2024\tnm084 labs\common\windows\microglut.h
 
-1733148172 source:c:\users\simon\downloads\tnm084-labs-2024\tnm084 labs\lab 3a\lab3a.cpp
-	"MicroGlut.h"
+1733142949 source:c:\users\simon\downloads\tnm084-labs-2024\tnm084 labs\lab 4\lab4.cpp
 	"GL_utilities.h"
 	"VectorUtils4.h"
 	"LittleOBJLoader.h"
 	"LoadTGA.h"
-	"glugg.h"
+	"MicroGlut.h"
 
 1733142946 c:\users\simon\downloads\tnm084-labs-2024\tnm084 labs\common\vectorutils4.h
 	<OpenGL/gl3.h>
@@ -285,32 +364,4 @@
 	<string.h>
 	<math.h>
 	"VectorUtils4.h"
-
-1733142948 c:\users\simon\downloads\tnm084-labs-2024\tnm084 labs\lab 3a\glugg.h
-	"VectorUtils4.h"
-	<math.h>
-	<stdlib.h>
-	<stdio.h>
-	<string.h>
-	"GL_utilities.h"
-	"VectorUtils4.h"
-	"glugg.h"
-
-1733148172 source:c:\users\simon\tnm084\tnm084project\lab 3a\lab3a.cpp
-	"MicroGlut.h"
-	"GL_utilities.h"
-	"VectorUtils4.h"
-	"LittleOBJLoader.h"
-	"LoadTGA.h"
-	"glugg.h"
-
-1733142948 c:\users\simon\tnm084\tnm084project\lab 3a\glugg.h
-	"VectorUtils4.h"
-	<math.h>
-	<stdlib.h>
-	<stdio.h>
-	<string.h>
-	"GL_utilities.h"
-	"VectorUtils4.h"
-	"glugg.h"
 
