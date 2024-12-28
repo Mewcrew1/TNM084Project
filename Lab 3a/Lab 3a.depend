@@ -314,3 +314,21 @@
 	"VectorUtils4.h"
 	"glugg.h"
 
+1735305237 source:c:\users\oskar\skrivbord\tnm084\proceduralproject\tnm084project\lab 3a\lab3a.cpp
+	"MicroGlut.h"
+	"GL_utilities.h"
+	"VectorUtils4.h"
+	"LittleOBJLoader.h"
+	"LoadTGA.h"
+	"glugg.h"
+
+1733304680 c:\users\oskar\skrivbord\tnm084\proceduralproject\tnm084project\lab 3a\glugg.h
+	"VectorUtils4.h"
+	<math.h>
+	<stdlib.h>
+	<stdio.h>
+	<string.h>
+	"GL_utilities.h"
+	"VectorUtils4.h"
+	"glugg.h"
+

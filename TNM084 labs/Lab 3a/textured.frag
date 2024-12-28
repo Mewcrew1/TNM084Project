@@ -17,4 +17,6 @@ void main(void)
 	outColor.a = 1.0;
 	
 //	outColor = vec4(exNormal, 1.0);
+
+	
 }

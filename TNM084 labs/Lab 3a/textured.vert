@@ -13,7 +13,10 @@ uniform mat4 projectionMatrix;
 void main(void)
 {
 	texCoord = inTexCoord;
-	exNormal = mat3(modelviewMatrix) * inNormal;
+
+	//exNormal = mat3(modelviewMatrix) * inNormal;
+	//labb 3b
+	exNormal = inNormal;
 	
 	gl_Position = projectionMatrix * modelviewMatrix * vec4(inPosition, 1.0);
 }
