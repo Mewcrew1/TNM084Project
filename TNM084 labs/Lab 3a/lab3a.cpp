@@ -219,8 +219,13 @@ void generateTrees(std::vector<gluggModel>& tree, std::vector<vec3>& treePos, in
     while(tree.size() < amount){
     gluggModel treeInstance = MakeTree();
     tree.push_back(treeInstance);
-    treePos.push_back(vec3((rand()%100) + 20,0, (rand()%100) + 20 ));
+    vec2 treecoordinates = vec2(((rand()%32)),((rand()%32)));
+    int treevertice = treecoordinates.y*2 * kTerrainSize + treecoordinates.x*2;
+    float treeheight = vertices[treevertice].y;
+    if(treeheight > 2){treePos.push_back(vec3(treecoordinates.x,treeheight,treecoordinates.y));}
+
     }
+
 }
 
 void buildTrees(mat4 worldToView, GLuint texShader, std::vector<gluggModel> tree, std::vector<vec3> treePos)
@@ -363,7 +368,7 @@ float fbm(vec2 pos, float scale){
     float f = 1.0;
     float a = 1.0;
 
-    int numOctaves = 15;
+    int numOctaves = 4;
     for(int i = 0; i < numOctaves; i++){
         t += a * smoothVoronoi(vec2(pos.x * f, pos.y * f));
         f *= 2.0;
@@ -390,9 +395,12 @@ void MakeTerrain()
 		//float h = ( (x - kTerrainSize/2)/bumpWidth * (x - kTerrainSize/2)/bumpWidth +  (z - kTerrainSize/2)/bumpWidth * (z - kTerrainSize/2)/bumpWidth );
 		//float y = MAX(0, 3-h) * bumpHeight + smoothVoronoi(vecSmooth) * 0.1;
 
-        float y = fbm(vecSmooth, 0.5) * 0.5;
+        float scale = 0.05;
+        vec2 vecScale = vec2(vecSmooth.x * scale,vecSmooth.y * scale);
 
-		vertices[ix] = vec3(x * kPolySize, y *3, z * kPolySize);
+        float y = fbm(vecScale, 1) * 3;
+
+		vertices[ix] = vec3(x * kPolySize, y * 3, z * kPolySize);
 		texCoords[ix] = vec2(x, z);
 		normals[ix] = vec3(0,1,0);
 	}
@@ -491,11 +499,11 @@ void init(void)
 
 	LoadTGATextureSimple("bark2.tga", &barktex);
 
-    /*for(int i = 0; i < 400; i++){
+    /*for(int i = 0; i < 50; i++){
         tree.push_back(MakeTree());
         treePos.push_back(vec3((rand()%40) - 20,0, (rand()%40) - 20 ));
     }*/
-    generateTrees(tree, treePos, 1);
+    generateTrees(tree, treePos, 50);
 
 	//tree = MakeTree();
 	//tree1 = MakeTree();
