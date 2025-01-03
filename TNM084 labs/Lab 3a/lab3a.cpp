@@ -327,8 +327,8 @@ void FlattenTerrainForRoad(const std::vector<vec3>& roadVertices) {
                 int ix = z * kTerrainSize + x;
                 float difference = Norm(VectorSub(vertices[ix].y,roadVertex.y));
                 if (difference < kPolySize) {
-                    vertices[ix].y = -difference; // Flatten terrain to match road height
-                    //alt vertices[ix].y = roadVertex.y
+                    //vertices[ix].y = -difference; // Flatten terrain to match road height
+                    vertices[ix].y = roadVertex.y;
                 }
             }
         }
@@ -357,6 +357,21 @@ void buildRoad(gluggModel roadModel, mat4 worldToView) {
     gluggDrawModel(roadModel, texShader);
 }
 
+float fbm(vec2 pos, float scale){
+    float t = 0.0;
+    float G = exp(-scale);
+    float f = 1.0;
+    float a = 1.0;
+
+    int numOctaves = 15;
+    for(int i = 0; i < numOctaves; i++){
+        t += a * smoothVoronoi(vec2(pos.x * f, pos.y * f));
+        f *= 2.0;
+        a *= G;
+    }
+    return t;
+}
+
 //Taken from lab 3b
 void MakeTerrain()
 {
@@ -375,7 +390,7 @@ void MakeTerrain()
 		//float h = ( (x - kTerrainSize/2)/bumpWidth * (x - kTerrainSize/2)/bumpWidth +  (z - kTerrainSize/2)/bumpWidth * (z - kTerrainSize/2)/bumpWidth );
 		//float y = MAX(0, 3-h) * bumpHeight + smoothVoronoi(vecSmooth) * 0.1;
 
-        float y = smoothVoronoi(vecSmooth) * 0.2;
+        float y = fbm(vecSmooth, 0.5) * 0.5;
 
 		vertices[ix] = vec3(x * kPolySize, y *3, z * kPolySize);
 		texCoords[ix] = vec2(x, z);
