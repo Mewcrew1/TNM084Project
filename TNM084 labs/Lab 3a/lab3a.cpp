@@ -72,8 +72,8 @@ void MakeCylinderAlt(int aSlices, float height, float topwidth, float bottomwidt
 
 mat4 projectionMatrix;
 
-Model *floormodel;
-GLuint grasstex, barktex;
+Model *floormodel, *watermodel;
+GLuint grasstex, barktex, leaftex,watertex;
 
 // Reference to shader programs
 GLuint phongShader, texShader;
@@ -112,6 +112,11 @@ vec3 vertices[kTerrainSize*kTerrainSize];
 vec2 texCoords[kTerrainSize*kTerrainSize];
 vec3 normals[kTerrainSize*kTerrainSize];
 GLuint indices[(kTerrainSize-1)*(kTerrainSize-1)*3*2];
+
+vec3 verticeswater[kTerrainSize*kTerrainSize];
+vec2 texCoordswater[kTerrainSize*kTerrainSize];
+vec3 normalswater[kTerrainSize*kTerrainSize];
+GLuint indiceswater[(kTerrainSize-1)*(kTerrainSize-1)*3*2];
 
 
 // THIS IS WHERE YOUR WORK GOES!
@@ -153,7 +158,7 @@ void Recursion(int depth, float height, float topWidth, float bottomWidth, float
         gluggTranslate(0, height, 0);
 
         // Color leaves green
-        gluggColor(0.0, 0.8, 0.0);
+        gluggColor(0.0, 255.0, 0.0);
 
         // Set leaf properties
         int numLeaves = 10;  // Number of leaves
@@ -242,7 +247,7 @@ void generateTrees(std::vector<gluggModel>& tree, std::vector<vec3>& treePos, in
     vec2 treecoordinates = vec2(((rand()%32)),((rand()%32)));
     int treevertice = treecoordinates.y*2 * kTerrainSize + treecoordinates.x*2;
     float treeheight = vertices[treevertice].y;
-    if(treeheight > 2){treePos.push_back(vec3(treecoordinates.x,treeheight,treecoordinates.y));}
+    if(treeheight > 0){treePos.push_back(vec3(treecoordinates.x,treeheight,treecoordinates.y));}
 
     }
 
@@ -255,7 +260,7 @@ void generateBush(std::vector<gluggModel>& Bush, std::vector<vec3>& BushPos, int
     vec2 bushcoordinates = vec2(((rand()%32)),((rand()%32)));
     int bushvertice = bushcoordinates.y*2 * kTerrainSize + bushcoordinates.x*2;
     float bushheight = vertices[bushvertice].y;
-    if(bushheight > 2){BushPos.push_back(vec3(bushcoordinates.x,bushheight,bushcoordinates.y));}
+    if(bushheight > 0){BushPos.push_back(vec3(bushcoordinates.x,bushheight,bushcoordinates.y));}
 
     }
 
@@ -488,6 +493,60 @@ void MakeTerrain()
     FlattenTerrainForRoad(roadVertices);
 }
 
+void MakeTerrainwater()
+{
+	// TO DO: This is where your terrain generation goes if on CPU.
+	for (int x = 0; x < kTerrainSize; x++)
+	for (int z = 0; z < kTerrainSize; z++)
+	{
+		int ix = z * kTerrainSize + x;
+
+		#define bumpHeight 0.5
+		#define bumpWidth 2.0
+
+        float waterheight = 2.0;
+		verticeswater[ix] = vec3(x * kPolySize, waterheight, z * kPolySize);
+		texCoordswater[ix] = vec2(x, z);
+		normalswater[ix] = vec3(0,1,0);
+	}
+
+	// Make indices
+	// You don't need to change this.
+	for (int x = 0; x < kTerrainSize-1; x++)
+	for (int z = 0; z < kTerrainSize-1; z++)
+	{
+		// Quad count
+		int q = (z*(kTerrainSize-1)) + (x);
+		// Polyon count = q * 2
+		// Indices
+		indiceswater[q*2*3] = x + z * kTerrainSize; // top left
+		indiceswater[q*2*3+1] = x+1 + z * kTerrainSize;
+		indiceswater[q*2*3+2] = x + (z+1) * kTerrainSize;
+		indiceswater[q*2*3+3] = x+1 + z * kTerrainSize;
+		indiceswater[q*2*3+4] = x+1 + (z+1) * kTerrainSize;
+		indiceswater[q*2*3+5] = x + (z+1) * kTerrainSize;
+	}
+
+	// Make normal vectors
+	// TO DO: This is where you calculate normal vectors
+	for (int x = 0; x < kTerrainSize; x++)
+	for (int z = 0; z < kTerrainSize; z++)
+	{
+	    vec3 v1 = verticeswater[(z) * kTerrainSize + MAX(x-1,0)];
+	    vec3 v2 = verticeswater[(z) * kTerrainSize + MIN(x+1,63)];
+	    vec3 v3 = verticeswater[MAX(z-1,0) * kTerrainSize + (x)];
+	    vec3 v4 = verticeswater[MIN(z+1,63) * kTerrainSize + (x)];
+	    vec3 Vector1 = v1 - v2;
+	    vec3 Vector2 = v3 - v4;
+	    vec3 normal = cross(Vector1,Vector2);
+
+		normalswater[z * kTerrainSize + x] = normal;
+
+	}
+
+}
+
+
 void reshape(int w, int h)
 {
     glViewport(0, 0, w, h);
@@ -527,6 +586,11 @@ void init(void)
     MakeTerrain();
     floormodel = LoadDataToModel(vertices, normals, texCoords, NULL,
 			indices, kTerrainSize*kTerrainSize, (kTerrainSize-1)*(kTerrainSize-1)*2*3);
+
+
+    MakeTerrainwater();
+    watermodel = LoadDataToModel(verticeswater, normalswater, texCoordswater, NULL,
+			indiceswater, kTerrainSize*kTerrainSize, (kTerrainSize-1)*(kTerrainSize-1)*2*3);
     roadModel = MakeRoad(roadVertices);
 
 // Important! The shader we upload to must be active!
@@ -544,12 +608,17 @@ void init(void)
 
 	LoadTGATextureSimple("bark2.tga", &barktex);
 
+	LoadTGATextureSimple("water.tga", &watertex);
+
+	LoadTGATextureSimple("ivyleaf.tga", &leaftex);
+
     /*for(int i = 0; i < 50; i++){
         tree.push_back(MakeTree());
         treePos.push_back(vec3((rand()%40) - 20,0, (rand()%40) - 20 ));
     }*/
-    generateTrees(tree, treePos, 50);
-    generateBush(Bush, bushPos, 50);
+
+    generateTrees(tree, treePos, 1);
+    generateBush(Bush, bushPos, 1);
 
 	//tree = MakeTree();
 	//tree1 = MakeTree();
@@ -632,6 +701,11 @@ void display(void)
 	glUniformMatrix4fv(glGetUniformLocation(texShader, "modelviewMatrix"), 1, GL_TRUE, m.m);
 	DrawModel(floormodel, texShader, "inPosition", "inNormal", "inTexCoord");
 
+    glBindTexture(GL_TEXTURE_2D, watertex);
+	glUseProgram(texShader);
+
+    DrawModel(watermodel, texShader, "inPosition", "inNormal", "inTexCoord");
+
 	// Draw the tree, as defined on MakeTree
 	glBindTexture(GL_TEXTURE_2D, barktex);
 	glUseProgram(texShader);
@@ -652,6 +726,8 @@ void display(void)
         glUniformMatrix4fv(glGetUniformLocation(texShader, "modelviewMatrix"), 1, GL_TRUE, m.m);
         gluggDrawModel(tree[i], texShader);
     }*/
+
+
 
     buildTrees(worldToView, texShader, tree, treePos);
     buildBush(worldToView, texShader, Bush, bushPos);
