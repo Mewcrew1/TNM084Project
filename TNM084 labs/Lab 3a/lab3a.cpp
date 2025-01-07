@@ -215,6 +215,26 @@ gluggModel MakeTree()
 
 	return gluggBuildModel(0);
 }
+
+
+gluggModel MakeBush()
+{
+	gluggSetPositionName("inPosition");
+	gluggSetNormalName("inNormal");
+	gluggSetTexCoordName("inTexCoord");
+
+	gluggBegin(GLUGG_TRIANGLES);
+
+	// Between gluggBegin and gluggEnd, call MakeCylinderAlt plus glugg transformations
+	// to create a tree.
+
+    Recursion(10 , 2.0/10, 0.15/5, 0.2/5, 0.15);
+
+	//MakeCylinderAlt(20, 2, 0.1, 0.15);
+
+	return gluggBuildModel(0);
+}
+
 void generateTrees(std::vector<gluggModel>& tree, std::vector<vec3>& treePos, int amount){
     while(tree.size() < amount){
     gluggModel treeInstance = MakeTree();
@@ -223,6 +243,19 @@ void generateTrees(std::vector<gluggModel>& tree, std::vector<vec3>& treePos, in
     int treevertice = treecoordinates.y*2 * kTerrainSize + treecoordinates.x*2;
     float treeheight = vertices[treevertice].y;
     if(treeheight > 2){treePos.push_back(vec3(treecoordinates.x,treeheight,treecoordinates.y));}
+
+    }
+
+}
+
+void generateBush(std::vector<gluggModel>& Bush, std::vector<vec3>& BushPos, int amount){
+    while(Bush.size() < amount){
+    gluggModel bushInstance = MakeBush();
+    Bush.push_back(bushInstance);
+    vec2 bushcoordinates = vec2(((rand()%32)),((rand()%32)));
+    int bushvertice = bushcoordinates.y*2 * kTerrainSize + bushcoordinates.x*2;
+    float bushheight = vertices[bushvertice].y;
+    if(bushheight > 2){BushPos.push_back(vec3(bushcoordinates.x,bushheight,bushcoordinates.y));}
 
     }
 
@@ -238,9 +271,21 @@ void buildTrees(mat4 worldToView, GLuint texShader, std::vector<gluggModel> tree
     }
 }
 
+void buildBush(mat4 worldToView, GLuint texShader, std::vector<gluggModel> Bush, std::vector<vec3> bushPos)
+{
+    mat4 m;
+    for(int i = 0; i < Bush.size(); i++){
+        m = worldToView * T(bushPos[i].x, bushPos[i].y, bushPos[i].z);
+        glUniformMatrix4fv(glGetUniformLocation(texShader, "modelviewMatrix"), 1, GL_TRUE, m.m);
+        gluggDrawModel(Bush[i], texShader);
+    }
+}
+
 
 std::vector<gluggModel> tree;
 std::vector<vec3> treePos;
+std::vector<gluggModel> Bush;
+std::vector<vec3> bushPos;
 //gluggModel tree1;
 gluggModel roadModel;
 std::vector<vec3> roadVertices;
@@ -504,6 +549,7 @@ void init(void)
         treePos.push_back(vec3((rand()%40) - 20,0, (rand()%40) - 20 ));
     }*/
     generateTrees(tree, treePos, 50);
+    generateBush(Bush, bushPos, 50);
 
 	//tree = MakeTree();
 	//tree1 = MakeTree();
@@ -608,6 +654,8 @@ void display(void)
     }*/
 
     buildTrees(worldToView, texShader, tree, treePos);
+    buildBush(worldToView, texShader, Bush, bushPos);
+
     buildRoad(roadModel, worldToView);
 
     /*
