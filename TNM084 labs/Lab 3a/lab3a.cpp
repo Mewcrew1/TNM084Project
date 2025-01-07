@@ -21,7 +21,7 @@
 
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 #define MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
-
+#define waterheight 1.5
 
 
 void MakeCylinderAlt(int aSlices, float height, float topwidth, float bottomwidth)
@@ -247,7 +247,7 @@ void generateTrees(std::vector<gluggModel>& tree, std::vector<vec3>& treePos, in
     vec2 treecoordinates = vec2(((rand()%32)),((rand()%32)));
     int treevertice = treecoordinates.y*2 * kTerrainSize + treecoordinates.x*2;
     float treeheight = vertices[treevertice].y;
-    if(treeheight > 0){treePos.push_back(vec3(treecoordinates.x,treeheight,treecoordinates.y));}
+    if(treeheight > waterheight){treePos.push_back(vec3(treecoordinates.x,treeheight,treecoordinates.y));}
 
     }
 
@@ -260,7 +260,7 @@ void generateBush(std::vector<gluggModel>& Bush, std::vector<vec3>& BushPos, int
     vec2 bushcoordinates = vec2(((rand()%32)),((rand()%32)));
     int bushvertice = bushcoordinates.y*2 * kTerrainSize + bushcoordinates.x*2;
     float bushheight = vertices[bushvertice].y;
-    if(bushheight > 0){BushPos.push_back(vec3(bushcoordinates.x,bushheight,bushcoordinates.y));}
+    if(bushheight > waterheight){BushPos.push_back(vec3(bushcoordinates.x,bushheight,bushcoordinates.y));}
 
     }
 
@@ -504,7 +504,7 @@ void MakeTerrainwater()
 		#define bumpHeight 0.5
 		#define bumpWidth 2.0
 
-        float waterheight = 2.0;
+        //float waterheight = 1.5;
 		verticeswater[ix] = vec3(x * kPolySize, waterheight, z * kPolySize);
 		texCoordswater[ix] = vec2(x, z);
 		normalswater[ix] = vec3(0,1,0);
@@ -606,7 +606,7 @@ void init(void)
 	glTexParameteri(GL_TEXTURE_2D,	GL_TEXTURE_WRAP_S,	GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D,	GL_TEXTURE_WRAP_T,	GL_REPEAT);
 
-	LoadTGATextureSimple("bark2.tga", &barktex);
+	LoadTGATextureSimple("bark3.tga", &barktex);
 
 	LoadTGATextureSimple("water.tga", &watertex);
 
@@ -617,8 +617,8 @@ void init(void)
         treePos.push_back(vec3((rand()%40) - 20,0, (rand()%40) - 20 ));
     }*/
 
-    generateTrees(tree, treePos, 1);
-    generateBush(Bush, bushPos, 1);
+    generateTrees(tree, treePos, 50);
+    generateBush(Bush, bushPos, 100);
 
 	//tree = MakeTree();
 	//tree1 = MakeTree();
