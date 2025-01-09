@@ -16,12 +16,12 @@
 // uses framework OpenGL
 // uses framework Cocoa
 
-#define kTerrainSize 129
+#define kTerrainSize 128
 #define kPolySize 0.5
 
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 #define MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
-#define waterheight 1.5
+#define waterheight 0.0
 
 
 void MakeCylinderAlt(int aSlices, float height, float topwidth, float bottomwidth)
@@ -244,8 +244,8 @@ void generateTrees(std::vector<gluggModel>& tree, std::vector<vec3>& treePos, in
     while(tree.size() < amount){
     gluggModel treeInstance = MakeTree();
     tree.push_back(treeInstance);
-    vec2 treecoordinates = vec2(((rand()%32)),((rand()%32)));
-    int treevertice = treecoordinates.y*2 * kTerrainSize + treecoordinates.x*2;
+    vec2 treecoordinates = vec2(((rand()%128)),((rand()%128)));
+    int treevertice = treecoordinates.y * kTerrainSize + treecoordinates.x;
     float treeheight = vertices[treevertice].y;
     if(treeheight > waterheight){treePos.push_back(vec3(treecoordinates.x,treeheight,treecoordinates.y));}
 
@@ -257,8 +257,8 @@ void generateBush(std::vector<gluggModel>& Bush, std::vector<vec3>& BushPos, int
     while(Bush.size() < amount){
     gluggModel bushInstance = MakeBush();
     Bush.push_back(bushInstance);
-    vec2 bushcoordinates = vec2(((rand()%32)),((rand()%32)));
-    int bushvertice = bushcoordinates.y*2 * kTerrainSize + bushcoordinates.x*2;
+    vec2 bushcoordinates = vec2(((rand()%128)),((rand()%128)));
+    int bushvertice = bushcoordinates.y * kTerrainSize + bushcoordinates.x;
     float bushheight = vertices[bushvertice].y;
     if(bushheight > waterheight){BushPos.push_back(vec3(bushcoordinates.x,bushheight,bushcoordinates.y));}
 
@@ -602,7 +602,7 @@ void MakeTerrainwater()
 		#define bumpWidth 2.0
 
         //float waterheight = 1.5;
-		verticeswater[ix] = vec3(x * kPolySize, waterheight, z * kPolySize);
+		verticeswater[ix] = vec3(x * kPolySize*2, waterheight, z * kPolySize*2);
 		texCoordswater[ix] = vec2(x, z);
 		normalswater[ix] = vec3(0,1,0);
 	}
@@ -826,8 +826,8 @@ void display(void)
 
 
 
-    //buildTrees(worldToView, texShader, tree, treePos);
-    //buildBush(worldToView, texShader, Bush, bushPos);
+    buildTrees(worldToView, texShader, tree, treePos);
+    buildBush(worldToView, texShader, Bush, bushPos);
 
     buildRoad(roadModel, worldToView);
 

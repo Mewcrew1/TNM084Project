@@ -496,3 +496,103 @@
 	"VectorUtils4.h"
 	"glugg.h"
 
+1735395651 source:c:\users\simon\tnm084project\tnm084 labs\common\gl_utilities.c
+	<Windows.h>
+	<stdlib.h>
+	<stdio.h>
+	<stddef.h>
+	<string.h>
+	"GL_utilities.h"
+
+1735395651 c:\users\simon\tnm084project\tnm084 labs\common\gl_utilities.h
+	<OpenGL/gl3.h>
+	"glew.h"
+	<GL/gl.h>
+	<GL/gl.h>
+	<stdlib.h>
+
+1735395651 c:\users\simon\tnm084project\tnm084 labs\common\windows\glew.h
+	<stddef.h>
+	<inttypes.h>
+	<stdint.h>
+	<inttypes.h>
+	<Availability.h>
+	<OpenGL/glu.h>
+	<GL/glu.h>
+
+1735395651 source:c:\users\simon\tnm084project\tnm084 labs\common\loadtga.c
+	"LoadTGA.h"
+
+1735395651 c:\users\simon\tnm084project\tnm084 labs\common\loadtga.h
+	<OpenGL/gl3.h>
+	"glew.h"
+	<GL/gl.h>
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+
+1735395651 source:c:\users\simon\tnm084project\tnm084 labs\common\windows\glew.c
+	"glew.h"
+	"wglew.h"
+	<GL/glxew.h>
+	<stddef.h>
+	<dlfcn.h>
+	<stdio.h>
+	<stdlib.h>
+	<stdlib.h>
+	<string.h>
+	<AvailabilityMacros.h>
+	<dlfcn.h>
+	<mach-o/dyld.h>
+
+1735395651 c:\users\simon\tnm084project\tnm084 labs\common\windows\wglew.h
+	<windows.h>
+
+1735395651 source:c:\users\simon\tnm084project\tnm084 labs\common\windows\microglut.c
+	<windows.h>
+	"glew.h"
+	<gl/gl.h>
+	"MicroGlut.h"
+	<stdio.h>
+	<io.h>
+	<fcntl.h>
+
+1735395651 c:\users\simon\tnm084project\tnm084 labs\common\windows\microglut.h
+
+1736422380 source:c:\users\simon\tnm084project\tnm084 labs\lab 3a\lab3a.cpp
+	<vector>
+	"MicroGlut.h"
+	"GL_utilities.h"
+	"VectorUtils4.h"
+	"LittleOBJLoader.h"
+	"LoadTGA.h"
+	"glugg.h"
+
+1735395651 c:\users\simon\tnm084project\tnm084 labs\common\vectorutils4.h
+	<OpenGL/gl3.h>
+	"glew.h"
+	<GL/gl.h>
+	<math.h>
+	<stdio.h>
+
+1735395651 c:\users\simon\tnm084project\tnm084 labs\common\littleobjloader.h
+	<OpenGL/gl3.h>
+	"glew.h"
+	<GL/gl.h>
+	"VectorUtils4.h"
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<math.h>
+	"VectorUtils4.h"
+
+1735395651 c:\users\simon\tnm084project\tnm084 labs\lab 3a\glugg.h
+	"VectorUtils4.h"
+	<math.h>
+	<stdlib.h>
+	<stdio.h>
+	<string.h>
+	"GL_utilities.h"
+	"VectorUtils4.h"
+	"glugg.h"
+
