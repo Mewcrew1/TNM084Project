@@ -16,7 +16,7 @@
 // uses framework OpenGL
 // uses framework Cocoa
 
-#define kTerrainSize 64
+#define kTerrainSize 129
 #define kPolySize 0.5
 
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
@@ -426,6 +426,95 @@ float fbm(vec2 pos, float scale){
     }
     return t;
 }
+//C++ version too old for clamp
+template <typename T>
+constexpr const T& clamp(const T& value, const T& lower, const T& upper) {
+    if (value < lower) return lower;
+    if (value > upper) return upper;
+    return value;
+}
+
+void diamondStep(int step_size, float roughness) {
+    int half_step = step_size / 2;
+    for (int x = half_step; x < kTerrainSize; x += step_size) {
+        for (int z = half_step; z < kTerrainSize; z += step_size) {
+            //int tl = (z - half_step) * kTerrainSize + (x - half_step); // Top-left
+            //int tr = (z - half_step) * kTerrainSize + (x + half_step); // Top-right
+            //int bl = (z + half_step) * kTerrainSize + (x - half_step); // Bottom-left
+            //int br = (z + half_step) * kTerrainSize + (x + half_step); // Bottom-right
+            int top = clamp(z - half_step, 0, kTerrainSize - 1);
+            int bottom = clamp(z + half_step, 0, kTerrainSize - 1);
+            int left = clamp(x - half_step, 0, kTerrainSize - 1);
+            int right = clamp(x + half_step, 0, kTerrainSize - 1);
+
+            int center = z * kTerrainSize + x;                        // Center point
+
+            //float avg_height = (vertices[tl].y + vertices[tr].y + vertices[bl].y + vertices[br].y) / 4.0f;
+            float offset = (static_cast<float>(rand()) / RAND_MAX * 2.0f - 1.0f) * roughness;
+            //vertices[center].y = avg_height + offset;
+            float avg = (vertices[top * kTerrainSize + left].y +
+                         vertices[top * kTerrainSize + right].y +
+                         vertices[bottom * kTerrainSize + left].y +
+                         vertices[bottom * kTerrainSize + right].y) /4.0f;
+            vertices[center].y = avg + offset;
+        }
+    }
+}
+
+void squareStep(int step_size, float roughness) {
+    int half_step = step_size / 2;
+    for (int x = 0; x < kTerrainSize; x += half_step) {
+        for (int z = (x + half_step) % step_size; z < kTerrainSize; z += step_size) {
+            int count = 0;
+            float sum = 0.0f;
+
+            if (z - half_step >= 0) { // Top
+                sum += vertices[(z - half_step) * kTerrainSize + x].y;
+                count++;
+            }
+            if (z + half_step < kTerrainSize) { // Bottom
+                sum += vertices[(z + half_step) * kTerrainSize + x].y;
+                count++;
+            }
+            if (x - half_step >= 0) { // Left
+                sum += vertices[z * kTerrainSize + (x - half_step)].y;
+                count++;
+            }
+            if (x + half_step < kTerrainSize) { // Right
+                sum += vertices[z * kTerrainSize + (x + half_step)].y;
+                count++;
+            }
+
+            int ix = z * kTerrainSize + x;
+            float avg = sum / count;
+            float offset = (static_cast<float>(rand()) / RAND_MAX * 2.0f - 1.0f) * roughness * 2.0f;
+            vertices[ix].y = avg + offset;
+        }
+    }
+}
+
+void diamondSquare(float roughness) {
+    int step_size = kTerrainSize - 1;
+
+    while (step_size > 1) {
+        diamondStep(step_size, roughness);
+        squareStep(step_size, roughness);
+        step_size /= 2;
+        roughness *= 0.6f; // Reduce roughness for finer details
+    }
+}
+
+void smoothTerrain() {
+    for (int x = 1; x < kTerrainSize - 1; ++x) {
+        for (int z = 1; z < kTerrainSize - 1; ++z) {
+            int ix = z * kTerrainSize + x;
+            float avg = (vertices[ix - 1].y + vertices[ix + 1].y +
+                         vertices[ix - kTerrainSize].y + vertices[ix + kTerrainSize].y) / 4.0f;
+            vertices[ix].y = avg;
+        }
+    }
+}
+
 
 //Taken from lab 3b
 void MakeTerrain()
@@ -449,11 +538,19 @@ void MakeTerrain()
         vec2 vecScale = vec2(vecSmooth.x * scale,vecSmooth.y * scale);
 
         float y = fbm(vecScale, 1) * 3;
-
-		vertices[ix] = vec3(x * kPolySize, y * 3, z * kPolySize);
+        vertices[ix] = vec3(x, 0, z);
+		//vertices[ix] = vec3(x * kPolySize, y * 3, z * kPolySize);
 		texCoords[ix] = vec2(x, z);
 		normals[ix] = vec3(0,1,0);
 	}
+	vertices[0].y = -2 + static_cast<float>(rand()) / RAND_MAX;
+    vertices[(kTerrainSize - 1) * kTerrainSize].y = 3 - static_cast<float>(rand()) / RAND_MAX;
+    vertices[kTerrainSize * (kTerrainSize - 1)].y = 2 + static_cast<float>(rand()) / RAND_MAX;
+    vertices[kTerrainSize * kTerrainSize - 1].y = static_cast<float>(rand()) / RAND_MAX - 4;
+	diamondSquare(3.5f);
+	smoothTerrain();
+
+
 
 	// Make indices
 	// You don't need to change this.
@@ -478,9 +575,9 @@ void MakeTerrain()
 	for (int z = 0; z < kTerrainSize; z++)
 	{
 	    vec3 v1 = vertices[(z) * kTerrainSize + MAX(x-1,0)];
-	    vec3 v2 = vertices[(z) * kTerrainSize + MIN(x+1,63)];
+	    vec3 v2 = vertices[(z) * kTerrainSize + MIN(x+1,128)];
 	    vec3 v3 = vertices[MAX(z-1,0) * kTerrainSize + (x)];
-	    vec3 v4 = vertices[MIN(z+1,63) * kTerrainSize + (x)];
+	    vec3 v4 = vertices[MIN(z+1,128) * kTerrainSize + (x)];
 	    vec3 Vector1 = v1 - v2;
 	    vec3 Vector2 = v3 - v4;
 	    vec3 normal = cross(Vector1,Vector2);
@@ -729,8 +826,8 @@ void display(void)
 
 
 
-    buildTrees(worldToView, texShader, tree, treePos);
-    buildBush(worldToView, texShader, Bush, bushPos);
+    //buildTrees(worldToView, texShader, tree, treePos);
+    //buildBush(worldToView, texShader, Bush, bushPos);
 
     buildRoad(roadModel, worldToView);
 
