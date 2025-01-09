@@ -16,7 +16,7 @@
 // uses framework OpenGL
 // uses framework Cocoa
 
-#define kTerrainSize 128
+#define kTerrainSize 129
 #define kPolySize 0.5
 
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
@@ -244,7 +244,7 @@ void generateTrees(std::vector<gluggModel>& tree, std::vector<vec3>& treePos, in
     while(tree.size() < amount){
     gluggModel treeInstance = MakeTree();
     tree.push_back(treeInstance);
-    vec2 treecoordinates = vec2(((rand()%128)),((rand()%128)));
+    vec2 treecoordinates = vec2(((rand()%kTerrainSize)),((rand()%kTerrainSize)));
     int treevertice = treecoordinates.y * kTerrainSize + treecoordinates.x;
     float treeheight = vertices[treevertice].y;
     if(treeheight > waterheight){treePos.push_back(vec3(treecoordinates.x,treeheight,treecoordinates.y));}
@@ -257,7 +257,7 @@ void generateBush(std::vector<gluggModel>& Bush, std::vector<vec3>& BushPos, int
     while(Bush.size() < amount){
     gluggModel bushInstance = MakeBush();
     Bush.push_back(bushInstance);
-    vec2 bushcoordinates = vec2(((rand()%128)),((rand()%128)));
+    vec2 bushcoordinates = vec2(((rand()%kTerrainSize)),((rand()%kTerrainSize)));
     int bushvertice = bushcoordinates.y * kTerrainSize + bushcoordinates.x;
     float bushheight = vertices[bushvertice].y;
     if(bushheight > waterheight){BushPos.push_back(vec3(bushcoordinates.x,bushheight,bushcoordinates.y));}
@@ -547,7 +547,7 @@ void MakeTerrain()
     vertices[(kTerrainSize - 1) * kTerrainSize].y = 3 - static_cast<float>(rand()) / RAND_MAX;
     vertices[kTerrainSize * (kTerrainSize - 1)].y = 2 + static_cast<float>(rand()) / RAND_MAX;
     vertices[kTerrainSize * kTerrainSize - 1].y = static_cast<float>(rand()) / RAND_MAX - 4;
-	diamondSquare(3.5f);
+	diamondSquare(10.5f);
 	smoothTerrain();
 
 
@@ -714,8 +714,8 @@ void init(void)
         treePos.push_back(vec3((rand()%40) - 20,0, (rand()%40) - 20 ));
     }*/
 
-    generateTrees(tree, treePos, 50);
-    generateBush(Bush, bushPos, 100);
+    generateTrees(tree, treePos, 100);
+    generateBush(Bush, bushPos, 200);
 
 	//tree = MakeTree();
 	//tree1 = MakeTree();
