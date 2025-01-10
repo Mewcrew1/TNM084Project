@@ -23,7 +23,7 @@
 
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 #define MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
-#define waterHeight 0.5
+#define waterHeight 0.0
 
 
 void MakeCylinderAlt(int aSlices, float height, float topwidth, float bottomwidth)
@@ -178,31 +178,31 @@ void Recursion(int depth, float height, float topWidth, float bottomWidth, float
 
         gluggPopMatrix();
 
-        return; // Basfall, "avsluta/gå tillbaka"
+        return; // Basfall, "avsluta/gï¿½ tillbaka"
     }
-    // Skapa första grenen
+    // Skapa fï¿½rsta grenen
     MakeCylinderAlt(20, height, topWidth, bottomWidth);
 
     // Flytta till toppen av den aktuella grenen
     gluggTranslate(0, height, 0);
 
-    // Vänster gren
-    gluggPushMatrix(); // Spara nuvarande transformation (undvika att kommade grenar påverkar denna grens transformationer)
+    // Vï¿½nster gren
+    gluggPushMatrix(); // Spara nuvarande transformation (undvika att kommade grenar pï¿½verkar denna grens transformationer)
     gluggRotate((rand()%2) - 0.5, (rand()%2) - 0.5, (rand()%2) - 0.5, 1);
-    Recursion(depth - 1 - rand()%2, (height * 0.7), topWidth * 0.7, topWidth, angle); // Rekursivt call för nästa djup av grenar
-    gluggPopMatrix(); // Återställ transformationen (undvika att nästa gren inte påverkas av denna grens transformationer)
+    Recursion(depth - 1 - rand()%2, (height * 0.7), topWidth * 0.7, topWidth, angle); // Rekursivt call fï¿½r nï¿½sta djup av grenar
+    gluggPopMatrix(); // ï¿½terstï¿½ll transformationen (undvika att nï¿½sta gren inte pï¿½verkas av denna grens transformationer)
 
-    // Höger gren
+    // Hï¿½ger gren
     gluggPushMatrix(); // Spara nuvarande transformation
     gluggRotate((rand()%2) - 0.5, (rand()%2) - 0.5, (rand()%2) - 0.5, 1); // Rotera i motsatt riktning
-    Recursion(depth - 1 - rand()%2, (height * 0.7), topWidth * 0.7, topWidth, angle); // Rekursivt call för nästa djup av grenar
-    gluggPopMatrix(); // Återställ transformationen
+    Recursion(depth - 1 - rand()%2, (height * 0.7), topWidth * 0.7, topWidth, angle); // Rekursivt call fï¿½r nï¿½sta djup av grenar
+    gluggPopMatrix(); // ï¿½terstï¿½ll transformationen
 
     // gren
-    /*gluggPushMatrix(); // Spara nuvarande transformation (undvika att kommade grenar påverkar denna grens transformationer)
+    /*gluggPushMatrix(); // Spara nuvarande transformation (undvika att kommade grenar pï¿½verkar denna grens transformationer)
     gluggRotate((rand()%2) - 0.25, (rand()%2) - 0.25, (rand()%2) - 0.25, 1);
-    Recursion(depth - 1 - 10*rand()%2, (height * 0.7), topWidth * 0.7, topWidth, angle); // Rekursivt call för nästa djup av grenar
-    gluggPopMatrix(); // Återställ transformationen (undvika att nästa gren inte påverkas av denna grens transformationer)*/
+    Recursion(depth - 1 - 10*rand()%2, (height * 0.7), topWidth * 0.7, topWidth, angle); // Rekursivt call fï¿½r nï¿½sta djup av grenar
+    gluggPopMatrix(); // ï¿½terstï¿½ll transformationen (undvika att nï¿½sta gren inte pï¿½verkas av denna grens transformationer)*/
 }
 
 gluggModel MakeTree()
@@ -671,7 +671,7 @@ void MakeTerrain()
     vertices[(kTerrainSize - 1) * kTerrainSize].y = 3 - static_cast<float>(rand()) / RAND_MAX;
     vertices[kTerrainSize * (kTerrainSize - 1)].y = 2 + static_cast<float>(rand()) / RAND_MAX;
     vertices[kTerrainSize * kTerrainSize - 1].y = static_cast<float>(rand()) / RAND_MAX - 4;
-	diamondSquare(3.5f);
+	diamondSquare(10.5f);
 	smoothTerrain();
 	//addCraters(1, 20, 10);
 
