@@ -6,6 +6,7 @@
 
 #define MAIN
 #include <vector>
+#include <cstdlib>
 #include "MicroGlut.h"
 #include "GL_utilities.h"
 #include "VectorUtils4.h"
@@ -13,15 +14,16 @@
 #include "LoadTGA.h"
 #include "glugg.h"
 
+
 // uses framework OpenGL
 // uses framework Cocoa
 
 #define kTerrainSize 129
-#define kPolySize 0.5
+#define kPolySize 1.0
 
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 #define MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
-#define waterheight 1.5
+#define waterHeight 0.5
 
 
 void MakeCylinderAlt(int aSlices, float height, float topwidth, float bottomwidth)
@@ -242,28 +244,44 @@ gluggModel MakeBush()
 
 void generateTrees(std::vector<gluggModel>& tree, std::vector<vec3>& treePos, int amount){
     while(tree.size() < amount){
-    gluggModel treeInstance = MakeTree();
-    tree.push_back(treeInstance);
-    vec2 treecoordinates = vec2(((rand()%32)),((rand()%32)));
-    int treevertice = treecoordinates.y*2 * kTerrainSize + treecoordinates.x*2;
-    float treeheight = vertices[treevertice].y;
-    if(treeheight > waterheight){treePos.push_back(vec3(treecoordinates.x,treeheight,treecoordinates.y));}
+        gluggModel treeInstance = MakeTree();
+        tree.push_back(treeInstance);
+        int x = ((rand() / RAND_MAX) * (kTerrainSize - 1));
+        int z = ((rand() / RAND_MAX) * (kTerrainSize - 1));
 
+        vec2 treeCoordinates = vec2(x, z);
+        //vec2 treecoordinates = vec2(((rand()%kTerrainSize)),((rand()%kTerrainSize)));
+        int treeVertice = treeCoordinates.y * kTerrainSize + treeCoordinates.x;
+        if(treeVertice >= 0 && treeVertice < kTerrainSize * kTerrainSize) {
+            float treeHeight = vertices[treeVertice].y;
+            if(treeHeight > waterHeight){
+                    treePos.push_back(vec3(treeCoordinates.x,treeHeight,treeCoordinates.y));
+            }
+        }
     }
-
 }
 
 void generateBush(std::vector<gluggModel>& Bush, std::vector<vec3>& BushPos, int amount){
     while(Bush.size() < amount){
-    gluggModel bushInstance = MakeBush();
-    Bush.push_back(bushInstance);
-    vec2 bushcoordinates = vec2(((rand()%32)),((rand()%32)));
-    int bushvertice = bushcoordinates.y*2 * kTerrainSize + bushcoordinates.x*2;
-    float bushheight = vertices[bushvertice].y;
-    if(bushheight > waterheight){BushPos.push_back(vec3(bushcoordinates.x,bushheight,bushcoordinates.y));}
+        gluggModel bushInstance = MakeBush();
+        Bush.push_back(bushInstance);
+        //do{
+            int x = ((rand() / RAND_MAX) * (kTerrainSize - 1));
+            int z = ((rand() / RAND_MAX) * (kTerrainSize - 1));
 
+            vec2 bushCoordinates = vec2(x, z);
+            //vec2 bushcoordinates = vec2(((rand()% kTerrainSize)),((rand()% kTerrainSize)));
+            int bushVertice = bushCoordinates.y * kTerrainSize + bushCoordinates.x;
+            if (bushVertice >= 0 && bushVertice < kTerrainSize * kTerrainSize){
+                float bushHeight = vertices[bushVertice].y;
+                if(bushHeight > waterHeight){
+                        BushPos.push_back(vec3(bushCoordinates.x,bushHeight,bushCoordinates.y));
+                }
+
+            }
+        //}
+        //while()
     }
-
 }
 
 void buildTrees(mat4 worldToView, GLuint texShader, std::vector<gluggModel> tree, std::vector<vec3> treePos)
@@ -289,7 +307,7 @@ void buildBush(mat4 worldToView, GLuint texShader, std::vector<gluggModel> Bush,
 
 std::vector<gluggModel> tree;
 std::vector<vec3> treePos;
-std::vector<gluggModel> Bush;
+std::vector<gluggModel> bush;
 std::vector<vec3> bushPos;
 //gluggModel tree1;
 gluggModel roadModel;
@@ -367,24 +385,27 @@ float smoothVoronoi(vec2 x)
 }
 
 void GenerateRoadPath(std::vector<vec3>& roadVertices, int length, float width) {
-    for (int i = 0; i < kTerrainSize; i++) {
-        float x = i * kPolySize;  // Increment along the x-axis
-        float z = sin(i * 0.05) * 10.0;  // Sine wave for the road path
-        roadVertices.push_back(vec3(x, 0.5, z - width * 0.5)); // Left side
-        roadVertices.push_back(vec3(x, 0.5, z + width * 0.5)); // Right side
+    for (int x = 0; x < kTerrainSize; x++) { // Increment along the x-axis
+
+        float z = sin(x * 0.03) * 10.0 + 15;  // Sine wave for the road path
+        roadVertices.push_back(vec3(x, 0, z - width * 0.5)); // Left side
+        roadVertices.push_back(vec3(x, 0, z + width * 0.5)); // Right side
     }
 }
 
-void FlattenTerrainForRoad(const std::vector<vec3>& roadVertices) {
+
+void FlattenTerrainForRoad(std::vector<vec3>& roadVertices) {
+    const float tolerance = 1e-5f;
     for (auto& roadVertex : roadVertices) {
         for (int x = 0; x < kTerrainSize; x++) {
             for (int z = 0; z < kTerrainSize; z++) {
                 int ix = z * kTerrainSize + x;
-                float difference = Norm(VectorSub(vertices[ix].y,roadVertex.y));
-                if (difference < kPolySize) {
-                    //vertices[ix].y = -difference; // Flatten terrain to match road height
-                    vertices[ix].y = roadVertex.y;
+                if (std::abs(vertices[ix].x - roadVertex.x) < tolerance &&
+                    std::abs(vertices[ix].z - roadVertex.z) < tolerance) {
+                    // Adjust terrain height to match road
+                    roadVertex.y = vertices[ix].y;
                 }
+
             }
         }
     }
@@ -514,6 +535,109 @@ void smoothTerrain() {
         }
     }
 }
+void addCraters(int numCraters, float radius, float depth) {
+    for (int i = 0; i < numCraters; ++i) {
+        float centerX = rand() % kTerrainSize;
+        float centerZ = rand() % kTerrainSize;
+
+        for (int x = 0; x < kTerrainSize; ++x) {
+            for (int z = 0; z < kTerrainSize; ++z) {
+                float dx = centerX - x;
+                float dz = centerZ - z;
+                float distance = sqrt(dx * dx + dz * dz);
+
+                if (distance < radius) {
+                    int ix = z * kTerrainSize + x;
+                    vertices[ix].y -= depth * (1.0f - distance / radius);
+                }
+            }
+        }
+    }
+}
+
+/*vec3 cubeVertices[] = {
+        SetVector(-0.5f, -0.5f, -0.5f),
+        SetVector( 0.5f, -0.5f, -0.5f),
+        SetVector( 0.5f,  0.5f, -0.5f),
+        SetVector(-0.5f,  0.5f, -0.5f),
+        SetVector(-0.5f, -0.5f,  0.5f),
+        SetVector( 0.5f, -0.5f,  0.5f),
+        SetVector( 0.5f,  0.5f,  0.5f),
+        SetVector(-0.5f,  0.5f,  0.5f),
+    };
+
+    // Cube faces (indices of vertices to form triangles)
+    GLuint cubeIndices[] = {
+        0, 1, 2, 0, 2, 3, // Bottom
+        4, 5, 6, 4, 6, 7, // Top
+        0, 1, 5, 0, 5, 4, // Front
+        1, 2, 6, 1, 6, 5, // Right
+        2, 3, 7, 2, 7, 6, // Back
+        3, 0, 4, 3, 4, 7  // Left
+    };*/
+
+/* gluggModel createRock(float x, float y, float z, float size){
+    gluggSetPositionName("inPosition");
+	gluggSetNormalName("inNormal");
+	gluggSetTexCoordName("inTexCoord");
+    // Randomize vertices slightly to make the rock look more "rocky"
+    for (int i = 0; i < 8; ++i) {
+        vertices[i].x += (rand() / (float)RAND_MAX - 0.5f) * 0.1f;
+        vertices[i].y += (rand() / (float)RAND_MAX - 0.5f) * 0.1f;
+        vertices[i].z += (rand() / (float)RAND_MAX - 0.5f) * 0.1f;
+    }
+
+    // Render the rock using GLUGG
+    gluggPushMatrix();
+
+    // Translate the rock to the random position
+    gluggTranslate(x, y, z);
+
+    // Scale the rock to the specified size
+    gluggScale(size, size, size);
+
+    gluggMode(GLUGG_TRIANGLES);
+    gluggColorv(vec3(0.651, 0.651, 0.651));
+    for (int i = 0; i < 36; i += 3) {  // 36 indices for 12 triangles
+        GLuint index1 = indices[i];
+        GLuint index2 = indices[i + 1];
+        GLuint index3 = indices[i + 2];
+
+        vec3 v1 = vertices[index1];
+        vec3 v2 = vertices[index2];
+        vec3 v3 = vertices[index3];
+
+        vec3 normal = normalize(cross(v2 - v1, v3 - v1));  // Normal for the triangle face
+
+        gluggNormalv(normal);  // Set normal
+        gluggVertexv(v1);      // Set vertex
+        gluggVertexv(v2);      // Set vertex
+        gluggVertexv(v3);      // Set vertex
+    }
+    gluggPopMatrix();
+
+    return gluggBuildModel(0);
+}
+
+
+
+// Function to generate random low-poly rock
+void GenerateRocks(int count)
+{
+    for (int i = 0; i < count; ++i)
+    {
+        // Random position for each rock
+        float x = ((rand() % 100) - 50) * 1.0f;  // Random X between -50 and 50
+        float z = ((rand() % 100) - 50) * 1.0f;  // Random Z between -50 and 50
+        float y = 0.0f;  // Assuming y is 0 for now, or you can use terrain height for y
+
+        // Random size for each rock
+        float size = (rand() / (float)RAND_MAX) * 0.5f + 0.5f;  // Random size between 0.5 and 1.0
+
+        // Generate the rock
+        createRock(x, y, z, size);
+    }
+}*/
 
 
 //Taken from lab 3b
@@ -549,6 +673,7 @@ void MakeTerrain()
     vertices[kTerrainSize * kTerrainSize - 1].y = static_cast<float>(rand()) / RAND_MAX - 4;
 	diamondSquare(3.5f);
 	smoothTerrain();
+	//addCraters(1, 20, 10);
 
 
 
@@ -583,11 +708,7 @@ void MakeTerrain()
 	    vec3 normal = cross(Vector1,Vector2);
 
 		normals[z * kTerrainSize + x] = normal;
-
 	}
-
-	GenerateRoadPath(roadVertices, 50, 2.0);
-    FlattenTerrainForRoad(roadVertices);
 }
 
 void MakeTerrainwater()
@@ -602,7 +723,7 @@ void MakeTerrainwater()
 		#define bumpWidth 2.0
 
         //float waterheight = 1.5;
-		verticeswater[ix] = vec3(x * kPolySize, waterheight, z * kPolySize);
+		verticeswater[ix] = vec3(x * kPolySize, waterHeight, z * kPolySize);
 		texCoordswater[ix] = vec2(x, z);
 		normalswater[ix] = vec3(0,1,0);
 	}
@@ -643,7 +764,6 @@ void MakeTerrainwater()
 
 }
 
-
 void reshape(int w, int h)
 {
     glViewport(0, 0, w, h);
@@ -681,9 +801,11 @@ void init(void)
 
     //FROM LABB 3B
     MakeTerrain();
+
     floormodel = LoadDataToModel(vertices, normals, texCoords, NULL,
 			indices, kTerrainSize*kTerrainSize, (kTerrainSize-1)*(kTerrainSize-1)*2*3);
-
+    //GenerateRoadPath(roadVertices, 50, 2.0);
+    //FlattenTerrainForRoad(roadVertices);
 
     MakeTerrainwater();
     watermodel = LoadDataToModel(verticeswater, normalswater, texCoordswater, NULL,
@@ -709,13 +831,8 @@ void init(void)
 
 	LoadTGATextureSimple("ivyleaf.tga", &leaftex);
 
-    /*for(int i = 0; i < 50; i++){
-        tree.push_back(MakeTree());
-        treePos.push_back(vec3((rand()%40) - 20,0, (rand()%40) - 20 ));
-    }*/
-
-    generateTrees(tree, treePos, 50);
-    generateBush(Bush, bushPos, 100);
+    generateTrees(tree, treePos, 1);
+    generateBush(bush, bushPos, 1);
 
 	//tree = MakeTree();
 	//tree1 = MakeTree();
@@ -801,7 +918,7 @@ void display(void)
     glBindTexture(GL_TEXTURE_2D, watertex);
 	glUseProgram(texShader);
 
-    DrawModel(watermodel, texShader, "inPosition", "inNormal", "inTexCoord");
+    //DrawModel(watermodel, texShader, "inPosition", "inNormal", "inTexCoord");
 
 	// Draw the tree, as defined on MakeTree
 	glBindTexture(GL_TEXTURE_2D, barktex);
@@ -826,8 +943,8 @@ void display(void)
 
 
 
-    //buildTrees(worldToView, texShader, tree, treePos);
-    //buildBush(worldToView, texShader, Bush, bushPos);
+    buildTrees(worldToView, texShader, tree, treePos);
+    buildBush(worldToView, texShader, bush, bushPos);
 
     buildRoad(roadModel, worldToView);
 

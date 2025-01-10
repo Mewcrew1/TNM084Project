@@ -71,18 +71,83 @@ float noise(vec3 st)
           	);
 }
 
+float fbm(vec3 pos, float scale){
+    float t = 0.0;
+    float G = exp(-scale);
+    float f = 1.0;
+    float a = 1.0;
+
+    int numOctaves = 8;
+    for(int i = 0; i < numOctaves; i++){
+        t += a * noise(pos * f);
+        f *= 2.0;
+        a*= G;
+    }
+    return t;
+}
+
 void computeVertex(int nr)
 {
 	vec3 p, v1, v2, v3, p1, p2, p3, s1, s2, n;
 
 	p = vec3(gl_in[nr].gl_Position);
 	// Add interesting code here
+
+	vec3 dir = p - vec3(0,0,0);
+	vec3 normvec = normalize(dir);
+
+
+	//vec3 punkt1 = vec3(1,1,0);
+	//vec3 punkt2 = vec3(1,0,1);
+	//vec3 punkt3 = vec3(0,1,1);
+	//punkt1 = normvec + punkt1;
+	//punkt2 = normvec + punkt2;
+	//punkt3 = normvec + punkt3;
+	//punkt1 = normalize(punkt1);
+    //punkt2 = normalize(punkt2);
+    //punkt3 = normalize(punkt3);
+	//vec3 punktvec1 = punkt2 - punkt1;
+	//vec3 punktvec2 = punkt3 - punkt2;
+	//vec3 normal = cross(punktvec2,punktvec1);
+
+	vec3 ortvec1 = cross(normvec, vec3(1,0,0));
+	vec3 ortvec2 = cross(normvec, ortvec1);
+	//Kanske fel
+	vec3 ortvec3 = 0.5 * (-ortvec1 - ortvec2);
+	float stepsize = 0.05;
+	ortvec1 *= stepsize;
+	ortvec2 *= stepsize;
+	ortvec3 *= stepsize;
+	vec3 ortpunkt1 = p + ortvec1;
+    vec3 ortpunkt2 = p + ortvec2;
+    vec3 ortpunkt3 = p + ortvec3;
+    ortpunkt1 = normalize(ortpunkt1);
+    ortpunkt2 = normalize(ortpunkt2);
+    ortpunkt3 = normalize(ortpunkt3);
+
+	p = normvec;
+
+	//p = p + noise(p*4)/9;
+
+	p = p + p * fbm(normvec ,0.5)/3;
+
+	ortpunkt1 = ortpunkt1 + ortpunkt1 * fbm(ortpunkt1,0.5)/4;
+	ortpunkt2 = ortpunkt2 + ortpunkt2 * fbm(ortpunkt2,0.5)/4;
+	ortpunkt3 = ortpunkt3 + ortpunkt3 * fbm(ortpunkt3,0.5)/4;
+    vec3 ortpunktvec1 = ortpunkt2 - ortpunkt1;
+	vec3 ortpunktvec2 = ortpunkt3 - ortpunkt2;
+	vec3 normal = cross(ortpunktvec1,ortpunktvec2);
+    normal = normalize(normal);
+
 	gl_Position = projMatrix * camMatrix * mdlMatrix * vec4(p, 1.0);
 
     gsTexCoord = teTexCoord[0];
 
 	n = teNormal[nr]; // This is not the normal you are looking for. Move along!
-    gsNormal = mat3(camMatrix * mdlMatrix) * n;
+    gsNormal = mat3(camMatrix * mdlMatrix) * normal;
+
+    //gsNormal = normal;
+
     EmitVertex();
 }
 

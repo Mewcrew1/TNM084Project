@@ -459,8 +459,9 @@
 
 1735305240 c:\users\oskar\skrivbord\tnm084\proceduralproject\tnm084project\tnm084 labs\common\windows\microglut.h
 
-1735827812 source:c:\users\oskar\skrivbord\tnm084\proceduralproject\tnm084project\tnm084 labs\lab 3a\lab3a.cpp
+1736510919 source:c:\users\oskar\skrivbord\tnm084\proceduralproject\tnm084project\tnm084 labs\lab 3a\lab3a.cpp
 	<vector>
+	<cstdlib>
 	"MicroGlut.h"
 	"GL_utilities.h"
 	"VectorUtils4.h"

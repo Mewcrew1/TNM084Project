@@ -135,6 +135,7 @@ void display(void)
 	DrawPatchModel(cube, shader, "in_Position", "in_Normal", "in_TexCoord");
 
 	glutSwapBuffers();
+
 }
 
 void key(unsigned char key, int x, int y)
