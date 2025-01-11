@@ -24,6 +24,81 @@
 #define waterheight 0.0
 
 
+// ------------ DrawPatchModel: modified utility function DrawModel from LittleOBJLoader ---------------
+static void ReportRerror(const char *caller, const char *name)
+{
+	static unsigned int draw_error_counter = 0;
+   if(draw_error_counter < NUM_DRAWMODEL_ERROR)
+   {
+		    fprintf(stderr, "%s warning: '%s' not found in shader!\n", caller, name);
+		    draw_error_counter++;
+   }
+   else if(draw_error_counter == NUM_DRAWMODEL_ERROR)
+   {
+		    fprintf(stderr, "%s: Number of error bigger than %i. No more vill be printed.\n", caller, NUM_DRAWMODEL_ERROR);
+		    draw_error_counter++;
+   }
+}
+
+void DrawPatchModel(Model *m, GLuint program, const char* vertexVariableName, const char* normalVariableName, const char* texCoordVariableName)
+{
+    #ifndef GL_PATCHES
+        #define GL_PATCHES 0x0000000e
+    #endif
+
+	if (m != NULL)
+	{
+		GLint loc;
+
+		glPatchParameteri(GL_PATCH_VERTICES, 3);
+		glBindVertexArray(m->vao);	// Select VAO
+
+		glBindBuffer(GL_ARRAY_BUFFER, m->vb);
+		loc = glGetAttribLocation(program, vertexVariableName);
+		if (loc >= 0)
+		{
+			glVertexAttribPointer(loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+			glEnableVertexAttribArray(loc);
+		}
+		else
+			ReportRerror("DrawModel", vertexVariableName);
+
+		if (normalVariableName!=NULL)
+		{
+			loc = glGetAttribLocation(program, normalVariableName);
+			if (loc >= 0)
+			{
+				glBindBuffer(GL_ARRAY_BUFFER, m->nb);
+				glVertexAttribPointer(loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+				glEnableVertexAttribArray(loc);
+			}
+			else
+				ReportRerror("DrawModel", normalVariableName);
+		}
+
+		// VBO for texture coordinate data NEW for 5b
+		if ((m->texCoordArray != NULL)&&(texCoordVariableName != NULL))
+		{
+			loc = glGetAttribLocation(program, texCoordVariableName);
+			if (loc >= 0)
+			{
+				glBindBuffer(GL_ARRAY_BUFFER, m->tb);
+				glVertexAttribPointer(loc, 2, GL_FLOAT, GL_FALSE, 0, 0);
+				glEnableVertexAttribArray(loc);
+			}
+			else
+				ReportRerror("DrawModel", texCoordVariableName);
+		}
+
+		glDrawElements(GL_PATCHES, m->numIndices, GL_UNSIGNED_INT, 0L);
+	}
+}
+
+GLint TessLevelInner = 1;
+GLint TessLevelOuter1 = 1;
+GLint TessLevelOuter2 = 1;
+GLint TessLevelOuter3 = 1;
+
 void MakeCylinderAlt(int aSlices, float height, float topwidth, float bottomwidth)
 {
 	gluggMode(GLUGG_TRIANGLE_STRIP);
@@ -72,8 +147,10 @@ void MakeCylinderAlt(int aSlices, float height, float topwidth, float bottomwidt
 
 mat4 projectionMatrix;
 
-Model *floormodel, *watermodel;
-GLuint grasstex, barktex, leaftex,watertex;
+//mat4 worldToViewMatrix, modelToWorldMatrix; kommer förhoppningsvis inte användas
+
+Model *floormodel, *watermodel, *cube;
+GLuint grasstex, barktex, leaftex,watertex,shader;
 
 // Reference to shader programs
 GLuint phongShader, texShader;
@@ -672,6 +749,8 @@ void init(void)
 	// Load and compile shader
 	phongShader = loadShaders("phong.vert", "phong.frag");
 	texShader = loadShaders("textured.vert", "textured.frag");
+	shader = loadShadersGT("lab4.vs", "lab4.fs", "lab4.gs",
+							"lab4.tcs", "lab4.tes");
 	printError("init shader");
 
 	// Upload geometry to the GPU:
@@ -714,8 +793,16 @@ void init(void)
         treePos.push_back(vec3((rand()%40) - 20,0, (rand()%40) - 20 ));
     }*/
 
-    generateTrees(tree, treePos, 100);
-    generateBush(Bush, bushPos, 200);
+    generateTrees(tree, treePos, 1);
+    generateBush(Bush, bushPos, 2);
+
+    glUseProgram(shader);
+    cube = LoadModelPlus("cube.obj");
+
+	glUniform1i(glGetUniformLocation(shader, "TessLevelInner"), TessLevelInner);
+	glUniform1i(glGetUniformLocation(shader, "TessLevelOuter1"), TessLevelOuter1);
+	glUniform1i(glGetUniformLocation(shader, "TessLevelOuter2"), TessLevelOuter2);
+	glUniform1i(glGetUniformLocation(shader, "TessLevelOuter3"), TessLevelOuter3);
 
 	//tree = MakeTree();
 	//tree1 = MakeTree();
@@ -830,6 +917,8 @@ void display(void)
     buildBush(worldToView, texShader, Bush, bushPos);
 
     buildRoad(roadModel, worldToView);
+
+    DrawPatchModel(cube,shader,"inPosition","inNormal","inTexCoord");
 
     /*
 	m = buildTree((0,4,0),worldToView,m,0);
