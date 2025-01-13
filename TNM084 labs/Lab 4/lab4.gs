@@ -2,8 +2,8 @@
 
 layout(triangles) in;
 // Use line_strip for visualization and triangle_strip for solids
-//layout(triangle_strip, max_vertices = 3) out;
-layout(line_strip, max_vertices = 3) out;
+layout(triangle_strip, max_vertices = 3) out;
+//layout(line_strip, max_vertices = 3) out;
 in vec2 teTexCoord[3];
 in vec3 teNormal[3];
 out vec2 gsTexCoord;
