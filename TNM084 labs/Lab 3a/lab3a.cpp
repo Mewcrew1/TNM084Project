@@ -5,6 +5,7 @@
 // Adapted to lastest GLUGG.
 
 #define MAIN
+#include <iostream>
 #include <vector>
 #include <cstdlib>
 #include "MicroGlut.h"
@@ -23,7 +24,84 @@
 
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 #define MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
-#define waterHeight 0.0
+#define waterHeight -0.0
+
+GLint TessLevelInner = 10;
+GLint TessLevelOuter1 = 10;
+GLint TessLevelOuter2 = 10;
+GLint TessLevelOuter3 = 10;
+
+// ------------ DrawPatchModel: modified utility function DrawModel from LittleOBJLoader ---------------
+static void ReportRerror(const char *caller, const char *name)
+{
+	static unsigned int draw_error_counter = 0;
+   if(draw_error_counter < NUM_DRAWMODEL_ERROR)
+   {
+		    fprintf(stderr, "%s warning: '%s' not found in shader!\n", caller, name);
+		    draw_error_counter++;
+   }
+   else if(draw_error_counter == NUM_DRAWMODEL_ERROR)
+   {
+		    fprintf(stderr, "%s: Number of error bigger than %i. No more vill be printed.\n", caller, NUM_DRAWMODEL_ERROR);
+		    draw_error_counter++;
+   }
+}
+
+// Same as DrawModel but with GL_PATCHES
+void DrawPatchModel(Model *m, GLuint program, const char* vertexVariableName, const char* normalVariableName, const char* texCoordVariableName)
+{
+    #ifndef GL_PATCHES
+        #define GL_PATCHES 0x0000000e
+    #endif
+
+	if (m != NULL)
+	{
+		GLint loc;
+
+		glPatchParameteri(GL_PATCH_VERTICES, 3);
+		glBindVertexArray(m->vao);	// Select VAO
+
+		glBindBuffer(GL_ARRAY_BUFFER, m->vb);
+		loc = glGetAttribLocation(program, vertexVariableName);
+		if (loc >= 0)
+		{
+			glVertexAttribPointer(loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+			glEnableVertexAttribArray(loc);
+		}
+		else
+			ReportRerror("DrawModel", vertexVariableName);
+
+		if (normalVariableName!=NULL)
+		{
+			loc = glGetAttribLocation(program, normalVariableName);
+			if (loc >= 0)
+			{
+				glBindBuffer(GL_ARRAY_BUFFER, m->nb);
+				glVertexAttribPointer(loc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+				glEnableVertexAttribArray(loc);
+			}
+			else
+				ReportRerror("DrawModel", normalVariableName);
+		}
+
+		// VBO for texture coordinate data NEW for 5b
+		if ((m->texCoordArray != NULL)&&(texCoordVariableName != NULL))
+		{
+			loc = glGetAttribLocation(program, texCoordVariableName);
+			if (loc >= 0)
+			{
+				glBindBuffer(GL_ARRAY_BUFFER, m->tb);
+				glVertexAttribPointer(loc, 2, GL_FLOAT, GL_FALSE, 0, 0);
+				glEnableVertexAttribArray(loc);
+			}
+			else
+				ReportRerror("DrawModel", texCoordVariableName);
+		}
+
+		glDrawElements(GL_PATCHES, m->numIndices, GL_UNSIGNED_INT, 0L);
+	}
+}
+
 
 
 void MakeCylinderAlt(int aSlices, float height, float topwidth, float bottomwidth)
@@ -73,12 +151,14 @@ void MakeCylinderAlt(int aSlices, float height, float topwidth, float bottomwidt
 
 
 mat4 projectionMatrix;
+mat4 worldToViewMatrix;
+mat4 modelToWorldMatrix;
 
 Model *floormodel, *watermodel;
 GLuint grasstex, barktex, leaftex,watertex;
 
 // Reference to shader programs
-GLuint phongShader, texShader;
+GLuint phongShader, texShader, stoneShader;
 
 // Floor quad
 // Floor quad
@@ -122,19 +202,43 @@ GLuint indiceswater[(kTerrainSize-1)*(kTerrainSize-1)*3*2];
 
 
 // THIS IS WHERE YOUR WORK GOES!
+
+vec2 VectorAdd(vec2 a,vec2 b){
+    vec2 result;
+
+    result.x = a.x + b.x;
+    result.y = a.y + b.y;
+
+    return result;
+}
+
+vec2 VectorSub(vec2 a,vec2 b){
+    vec2 result;
+
+    result.x = a.x - b.x;
+    result.y = a.y - b.y;
+
+    return result;
+}
+
+float length(vec2 a){
+ float result;
+ result = a.x*a.x + a.y*a.y;
+ return result;
+}
 void MakeLeaves(float sizeLeaf){
-    float randomSize = ((rand() / (float)RAND_MAX))/ 10.0;
+    float randomSize = ((rand() / (float)RAND_MAX)) * 0.2;
     float xOffset = ((rand() / (float)RAND_MAX) - 0.5) * 0.3; // Smaller range
     float yOffset = ((rand() / (float)RAND_MAX) - 0.5) * 0.3;
     float zOffset = ((rand() / (float)RAND_MAX) - 0.5) * 0.3;
     gluggTranslate(xOffset, yOffset, zOffset); // Position leaf
 
-    float rotation = (rand() / (float)RAND_MAX) * 45.0f;  // Rotation between 0 and 45 degrees
+    float rotation = (rand() / (float)RAND_MAX) * 360.0f;  // Rotation between 0 and 360 degrees
     gluggRotate(0, rotation, 0, 1);  // Rotate around Y-axis
 
     vec3 v1 = SetVector(-sizeLeaf / 2 - randomSize, 0, 0);
     vec3 v2 = SetVector(sizeLeaf / 2 + randomSize, 0, 0);
-    vec3 v3 = SetVector(0, sizeLeaf/ 2, 0);
+    vec3 v3 = SetVector(0, sizeLeaf / 2, 0);
 
     vec3 normal = cross(v2 - v1, v3 - v1);
     normal = normalize(normal);
@@ -203,6 +307,32 @@ void Recursion(int depth, float height, float topWidth, float bottomWidth, float
     gluggRotate((rand()%2) - 0.25, (rand()%2) - 0.25, (rand()%2) - 0.25, 1);
     Recursion(depth - 1 - 10*rand()%2, (height * 0.7), topWidth * 0.7, topWidth, angle); // Rekursivt call f�r n�sta djup av grenar
     gluggPopMatrix(); // �terst�ll transformationen (undvika att n�sta gren inte p�verkas av denna grens transformationer)*/
+
+    // Generate child branches with small rotational differences
+    /*int branchCount = 2 + rand() % 2; // 2 to 3 branches per level
+    float baseAngleX = 10.0f; // Base upward tilt
+    float baseAngleY = angle; // Maintain current branch's Y-axis direction
+
+    for (int i = 0; i < branchCount; ++i) {
+        gluggPushMatrix();
+
+        // Small deviations in branch rotations
+        float rotationX = baseAngleX + ((rand() % 20 - 10) / 10.0f); // Small tilt upwards or downwards
+        float rotationY = baseAngleY + ((rand() % 20 - 10) / 10.0f); // Small horizontal deviation
+        float rotationZ = ((rand() % 10 - 5) / 10.0f); // Minimal twist
+
+        gluggRotate(rotationX, rotationY, rotationZ, 1);
+
+        // Reduce size for child branches
+        float newHeight = height * 0.7f;
+        float newTopWidth = topWidth * 0.7f;
+        float newBottomWidth = bottomWidth * 0.7f;
+
+        // Recursive call for the next level of branches
+        Recursion(depth - 1, newHeight, newTopWidth, newBottomWidth, angle);
+
+        gluggPopMatrix();
+    }*/
 }
 
 gluggModel MakeTree()
@@ -216,7 +346,7 @@ gluggModel MakeTree()
 	// Between gluggBegin and gluggEnd, call MakeCylinderAlt plus glugg transformations
 	// to create a tree.
 
-    Recursion(10 , 2.0, 0.15, 0.2, 0.15);
+    Recursion(10 , 3.0, 0.15, 0.2, 0.15);
 
 	//MakeCylinderAlt(20, 2, 0.1, 0.15);
 
@@ -243,45 +373,87 @@ gluggModel MakeBush()
 }
 
 void generateTrees(std::vector<gluggModel>& tree, std::vector<vec3>& treePos, int amount){
-    while(tree.size() < amount){
-        gluggModel treeInstance = MakeTree();
-        tree.push_back(treeInstance);
-        int x = ((rand() / RAND_MAX) * (kTerrainSize - 1));
-        int z = ((rand() / RAND_MAX) * (kTerrainSize - 1));
+    int attempts = 0;
+    int maxAttempts = amount * 100;
+    while(tree.size() < amount && attempts < maxAttempts){
+
+        attempts++;
+
+        int x = rand() % kTerrainSize;
+        int z = rand() % kTerrainSize;
 
         vec2 treeCoordinates = vec2(x, z);
-        //vec2 treecoordinates = vec2(((rand()%kTerrainSize)),((rand()%kTerrainSize)));
         int treeVertice = treeCoordinates.y * kTerrainSize + treeCoordinates.x;
-        if(treeVertice >= 0 && treeVertice < kTerrainSize * kTerrainSize) {
-            float treeHeight = vertices[treeVertice].y;
-            if(treeHeight > waterHeight){
-                    treePos.push_back(vec3(treeCoordinates.x,treeHeight,treeCoordinates.y));
+        if (treeVertice < 0 || treeVertice >= kTerrainSize * kTerrainSize){
+            continue;
+        }
+        float treeHeight = vertices[treeVertice].y;
+        if(treeHeight < waterHeight){
+            continue;
+        }
+
+        bool collision = false;
+        vec3 currentTreePos = vec3(treeCoordinates.x,treeHeight,treeCoordinates.y);
+        for(const vec3 treePosition : treePos){
+            if(length(VectorSub(vec2(currentTreePos.x, currentTreePos.z),vec2(treePosition.x, treePosition.z))) < 2.0f){
+                collision = true;
+                break;
             }
+        }
+
+        if (!collision) {
+            tree.push_back(MakeTree());
+            treePos.push_back(currentTreePos);
         }
     }
 }
 
-void generateBush(std::vector<gluggModel>& Bush, std::vector<vec3>& BushPos, int amount){
-    while(Bush.size() < amount){
-        gluggModel bushInstance = MakeBush();
-        Bush.push_back(bushInstance);
-        //do{
-            int x = ((rand() / RAND_MAX) * (kTerrainSize - 1));
-            int z = ((rand() / RAND_MAX) * (kTerrainSize - 1));
+void generateBush(std::vector<gluggModel>& bush, std::vector<vec3>& bushPos, const std::vector<vec3> treePos, int amount){
+    int attempts = 0;
+    int maxAttempts = amount * 100;
+    while(bush.size() < amount && attempts < maxAttempts){
 
-            vec2 bushCoordinates = vec2(x, z);
-            //vec2 bushcoordinates = vec2(((rand()% kTerrainSize)),((rand()% kTerrainSize)));
-            int bushVertice = bushCoordinates.y * kTerrainSize + bushCoordinates.x;
-            if (bushVertice >= 0 && bushVertice < kTerrainSize * kTerrainSize){
-                float bushHeight = vertices[bushVertice].y;
-                if(bushHeight > waterHeight){
-                        BushPos.push_back(vec3(bushCoordinates.x,bushHeight,bushCoordinates.y));
-                }
+        attempts++;
 
+        int x = rand() % kTerrainSize;
+        int z = rand() % kTerrainSize;
+
+        vec2 coord = vec2(x, z);
+        int ix = z * kTerrainSize + x;
+        if (ix < 0 || ix >= kTerrainSize * kTerrainSize){
+            continue;
+        }
+
+        float bushHeight = vertices[ix].y;
+        if(bushHeight < waterHeight){
+            continue;
+        }
+
+        bool collision = false;
+        vec3 currentPos = vec3(x,bushHeight,z);
+        for(const vec3 treePosition : treePos){
+            if(length(VectorSub(vec2(currentPos.x, currentPos.z),vec2(treePosition.x, treePosition.z))) < 2.0f){
+                collision = true;
+                break;
             }
-        //}
-        //while()
+        }
+
+        if(!collision){
+            for(const vec3 bushPosition : bushPos){
+                if(length(VectorSub(vec2(currentPos.x, currentPos.z),vec2(bushPosition.x, bushPosition.z))) < 2.0f){
+                    collision = true;
+                    break;
+                }
+            }
+        }
+
+        if (!collision) {
+            bush.push_back(MakeBush());
+            bushPos.push_back(currentPos);
+        }
     }
+
+    std::cout << bush.size();
 }
 
 void buildTrees(mat4 worldToView, GLuint texShader, std::vector<gluggModel> tree, std::vector<vec3> treePos)
@@ -294,14 +466,469 @@ void buildTrees(mat4 worldToView, GLuint texShader, std::vector<gluggModel> tree
     }
 }
 
-void buildBush(mat4 worldToView, GLuint texShader, std::vector<gluggModel> Bush, std::vector<vec3> bushPos)
+void buildBush(mat4 worldToView, GLuint texShader, std::vector<gluggModel> bush, std::vector<vec3> bushPos)
 {
     mat4 m;
-    for(int i = 0; i < Bush.size(); i++){
+    for(int i = 0; i < bush.size(); i++){
         m = worldToView * T(bushPos[i].x, bushPos[i].y, bushPos[i].z);
         glUniformMatrix4fv(glGetUniformLocation(texShader, "modelviewMatrix"), 1, GL_TRUE, m.m);
-        gluggDrawModel(Bush[i], texShader);
+        gluggDrawModel(bush[i], texShader);
     }
+}
+
+Model *MakeStone() {
+    Model *stone = LoadModelPlus("cube.obj");
+    return stone;
+}
+
+void generateStones(std::vector<Model*>& stone, std::vector<vec3>& stonePos, std::vector<float>& stoneSize, std::vector<vec3> treePos, std::vector<vec3> bushPos, int amount) {
+    int attempts = 0;
+    int maxAttempts = amount * 100;
+    while(stone.size() < amount && attempts < maxAttempts){
+
+        attempts++;
+
+        int x = rand() % kTerrainSize;
+        int z = rand() % kTerrainSize;
+        float randomSize = (rand() % 10) * 0.1;
+
+        vec2 coord = vec2(x, z);
+        int ix = z * kTerrainSize + x;
+        if (ix < 0 || ix >= kTerrainSize * kTerrainSize){
+            continue;
+        }
+
+        float stoneHeight = vertices[ix].y + 1.0f;
+        if(stoneHeight < waterHeight){
+            continue;
+        }
+
+        bool collision = false;
+        vec3 currentPos = vec3(x,stoneHeight,z);
+        for(const vec3 treePosition : treePos){
+            if(length(VectorSub(vec2(currentPos.x, currentPos.z),vec2(treePosition.x, treePosition.z))) < 2.0f){
+                collision = true;
+                break;
+            }
+        }
+
+        if(!collision){
+            for(const vec3 bushPosition : bushPos){
+                if(length(VectorSub(vec2(currentPos.x, currentPos.z),vec2(bushPosition.x, bushPosition.z))) < 2.0f){
+                    collision = true;
+                    break;
+                }
+            }
+        }
+        if(!collision){
+            for(const vec3 stonePosition : stonePos){
+                if(length(VectorSub(vec2(currentPos.x, currentPos.z),vec2(stonePosition.x, stonePosition.z))) < 2.0f){
+                    collision = true;
+                    break;
+                }
+            }
+        }
+
+        if (!collision) {
+                stone.push_back(MakeStone());
+                stonePos.push_back(currentPos);
+                stoneSize.push_back(randomSize);
+
+        }
+    }
+}
+
+void buildStone(mat4 worldToViewMatrix, std::vector<Model*>& stone, std::vector<vec3>& stonePos, std::vector<float>& stoneSize, GLuint shader) {
+    mat4 m;
+    for (size_t i = 0; i < stone.size(); ++i) {
+
+        //m = worldToView * T(stonePos[i].x, stonePos[i].y, stonePos[i].z) * S(stoneSize[i], stoneSize[i], stoneSize[i]);;
+        m = worldToViewMatrix * T(stonePos[i].x, 5 + stonePos[i].y, stonePos[i].z) * S(10 * stoneSize[i], 10 * stoneSize[i], 10 * stoneSize[i]);
+
+        // Upload the transformation matrix
+        glUniformMatrix4fv(glGetUniformLocation(shader, "mdlMatrix"), 1, GL_TRUE, m.m);
+
+        // Render the stone
+        //DrawModel(stones[i], shader, "in_Position", "in_Normal", "in_TexCoord");
+         DrawPatchModel(stone[i], shader, "in_Position", "in_Normal", "in_TexCoord");
+
+    }
+}
+
+/*float Noise(float x, float y, float z) {
+    return (sin(x * 12.9898 + y * 78.233 + z * 37.719) * 43758.5453);
+}
+
+// Function to generate smooth noise (Perlin-style)
+float SmoothNoise(vec3 pos) {
+    float noiseValue = Noise(pos.x, pos.y, pos.z);
+    return noiseValue - floor(noiseValue); // Normalize to [0,1]
+}
+
+// Function to perturb a position to create stone-like variation
+vec3 PerturbPosition(vec3 position, float noiseScale, float displacement) {
+    float noise = SmoothNoise(position * noiseScale);
+    float offset = (noise - 0.5f) * displacement; // Center noise around 0
+    return position + normalize(position) * offset;
+}
+
+
+gluggModel MakeStone(float radius = 1.0f, float noiseScale = 5.0f, float displacement = 0.2f) {
+    gluggBegin(GLUGG_TRIANGLES);
+
+    int slices = 40;   // Number of longitudinal segments
+    int stacks = 40;   // Number of latitudinal segments
+
+    for(int stack = 0; stack < stacks; ++stack) {
+        float phi1 = M_PI * (stack / (float)stacks);        // Current stack angle
+        float phi2 = M_PI * ((stack + 1) / (float)stacks);  // Next stack angle
+
+        for(int slice = 0; slice < slices; ++slice) {
+            float theta1 = 2.0 * M_PI * (slice / (float)slices);        // Current slice angle
+            float theta2 = 2.0 * M_PI * ((slice + 1) / (float)slices);  // Next slice angle
+
+            // Four vertices of the current quad
+            vec3 p1 = SetVector(
+                radius * sin(phi1) * cos(theta1),
+                radius * cos(phi1),
+                radius * sin(phi1) * sin(theta1)
+            );
+            vec3 p2 = SetVector(
+                radius * sin(phi2) * cos(theta1),
+                radius * cos(phi2),
+                radius * sin(phi2) * sin(theta1)
+            );
+            vec3 p3 = SetVector(
+                radius * sin(phi2) * cos(theta2),
+                radius * cos(phi2),
+                radius * sin(phi2) * sin(theta2)
+            );
+            vec3 p4 = SetVector(
+                radius * sin(phi1) * cos(theta2),
+                radius * cos(phi1),
+                radius * sin(phi1) * sin(theta2)
+            );
+
+             // Perturb positions for stone-like variation
+            p1 = PerturbPosition(p1, noiseScale, displacement);
+            p2 = PerturbPosition(p2, noiseScale, displacement);
+            p3 = PerturbPosition(p3, noiseScale, displacement);
+            p4 = PerturbPosition(p4, noiseScale, displacement);
+
+
+            // Normals for lighting
+            vec3 n1 = normalize(p1);
+            vec3 n2 = normalize(p2);
+            vec3 n3 = normalize(p3);
+            vec3 n4 = normalize(p4);
+
+            // First triangle of the quad
+            gluggNormalv(n1);
+            gluggTexCoord(stack / (float)stacks, slice / (float)slices);
+            gluggVertexv(p1);
+
+            gluggNormalv(n2);
+            gluggTexCoord((stack + 1) / (float)stacks, slice / (float)slices);
+            gluggVertexv(p2);
+
+            gluggNormalv(n3);
+            gluggTexCoord((stack + 1) / (float)stacks, (slice + 1) / (float)slices);
+            gluggVertexv(p3);
+
+            // Second triangle of the quad
+            gluggNormalv(n1);
+            gluggTexCoord(stack / (float)stacks, slice / (float)slices);
+            gluggVertexv(p1);
+
+            gluggNormalv(n3);
+            gluggTexCoord((stack + 1) / (float)stacks, (slice + 1) / (float)slices);
+            gluggVertexv(p3);
+
+            gluggNormalv(n4);
+            gluggTexCoord(stack / (float)stacks, (slice + 1) / (float)slices);
+            gluggVertexv(p4);
+        }
+    }
+
+    return gluggBuildModel(0);
+}
+
+void generateStones(std::vector<gluggModel>& stone, std::vector<vec3>& stonePos, std::vector<float>& stoneSize, std::vector<vec3> treePos, std::vector<vec3> bushPos, int amount) {
+    int attempts = 0;
+    int maxAttempts = amount * 100;
+    while(stone.size() < amount && attempts < maxAttempts){
+
+        attempts++;
+
+        int x = rand() % kTerrainSize;
+        int z = rand() % kTerrainSize;
+        float randomSize = (rand() % 10) * 0.1;
+
+        vec2 coord = vec2(x, z);
+        int ix = z * kTerrainSize + x;
+        if (ix < 0 || ix >= kTerrainSize * kTerrainSize){
+            continue;
+        }
+
+        float stoneHeight = vertices[ix].y;
+        if(stoneHeight < waterHeight){
+            continue;
+        }
+
+        bool collision = false;
+        vec3 currentPos = vec3(x,stoneHeight,z);
+        for(const vec3 treePosition : treePos){
+            if(length(VectorSub(vec2(currentPos.x, currentPos.z),vec2(treePosition.x, treePosition.z))) < 2.0f){
+                collision = true;
+                break;
+            }
+        }
+
+        if(!collision){
+            for(const vec3 bushPosition : bushPos){
+                if(length(VectorSub(vec2(currentPos.x, currentPos.z),vec2(bushPosition.x, bushPosition.z))) < 2.0f){
+                    collision = true;
+                    break;
+                }
+            }
+        }
+        if(!collision){
+            for(const vec3 stonePosition : stonePos){
+                if(length(VectorSub(vec2(currentPos.x, currentPos.z),vec2(stonePosition.x, stonePosition.z))) < 2.0f){
+                    collision = true;
+                    break;
+                }
+            }
+        }
+
+        if (!collision) {
+                stone.push_back(MakeStone());
+                stonePos.push_back(currentPos);
+                stoneSize.push_back(randomSize);
+
+        }
+    }
+}
+void buildStone(mat4 worldToView, GLuint texShader, std::vector<gluggModel> stone, std::vector<vec3> stonePos)
+{
+    mat4 m;
+    for(int i = 0; i < stone.size(); i++){
+        m = worldToView * T(stonePos[i].x, stonePos[i].y, stonePos[i].z);
+        glUniformMatrix4fv(glGetUniformLocation(texShader, "modelviewMatrix"), 1, GL_TRUE, m.m);
+        gluggDrawModel(stone[i], texShader);
+    }
+}*/
+
+
+// Add random perturbation for a less spherical shape
+vec3 perturb(vec3 p, float intensity) {
+    float offset = (static_cast<float>(rand()) / RAND_MAX - 0.5f) * intensity;
+    return p + SetVector(offset, offset, offset);
+}
+
+// Recursive tessellation function using GLUGG
+void tessellateTriangleGlugg(vec3 p1, vec3 p2, vec3 p3, int tessLevel, float perturbation) {
+    if (tessLevel == 0) {
+        // Add the triangle to GLUGG
+        gluggNormalv(normalize(cross(VectorSub(p2, p1), VectorSub(p3,p1)))); // Compute face normal
+        gluggVertexv(p1);
+        gluggVertexv(p2);
+        gluggVertexv(p3);
+        return;
+    }
+
+    // Compute midpoints
+    vec3 m1 = normalize((p1 + p2) * 0.5f); // Midpoint on sphere
+    vec3 m2 = normalize((p2 + p3) * 0.5f);
+    vec3 m3 = normalize((p3 + p1) * 0.5f);
+
+    // Add random perturbations to make it stone-like
+    if (perturbation > 0.0f) {
+        m1 = perturb(m1, perturbation);
+        m2 = perturb(m2, perturbation);
+        m3 = perturb(m3, perturbation);
+    }
+
+    // Recursively tessellate each smaller triangle
+    tessellateTriangleGlugg(p1, m1, m3, tessLevel - 1, perturbation);
+    tessellateTriangleGlugg(m1, p2, m2, tessLevel - 1, perturbation);
+    tessellateTriangleGlugg(m3, m2, p3, tessLevel - 1, perturbation);
+    tessellateTriangleGlugg(m1, m2, m3, tessLevel - 1, perturbation);
+}
+
+// Create a tessellated stone model using GLUGG
+gluggModel MakeRealisticStone(int tessLevel = 3, float radius = 1.0f, float perturbation = 0.1f) {
+    gluggBegin(GLUGG_TRIANGLES);
+
+    // Initial tetrahedron for the sphere
+    vec3 p1 = normalize(SetVector(1, 0, -1.0f / sqrt(2))) * radius;
+    vec3 p2 = normalize(SetVector(-1, 0, -1.0f / sqrt(2))) * radius;
+    vec3 p3 = normalize(SetVector(0, 1, 1.0f / sqrt(2))) * radius;
+    vec3 p4 = normalize(SetVector(0, -1, 1.0f / sqrt(2))) * radius;
+
+    // Tessellate each face of the tetrahedron
+    tessellateTriangleGlugg(p1, p2, p3, tessLevel, perturbation*0.1);
+    tessellateTriangleGlugg(p1, p3, p4, tessLevel, perturbation*0.1);
+    tessellateTriangleGlugg(p1, p4, p2, tessLevel, perturbation*0.1);
+    tessellateTriangleGlugg(p2, p4, p3, tessLevel, perturbation*0.1);
+
+    return gluggBuildModel(0);
+}
+
+// Struct to store sphere vertices for deformation
+struct SphereVertex {
+    vec3 position;
+    vec3 normal;
+};
+
+// Generate a smooth sphere with deformation
+std::vector<SphereVertex> generateDeformedSphere(int latitudeBands, int longitudeBands, float radius, float deformationStrength) {
+    std::vector<SphereVertex> vertices;
+
+    for (int lat = 0; lat <= latitudeBands; ++lat) {
+        float theta = lat * M_PI / latitudeBands; // Polar angle
+        float sinTheta = sin(theta);
+        float cosTheta = cos(theta);
+
+        for (int lon = 0; lon <= longitudeBands; ++lon) {
+            float phi = lon * 2.0 * M_PI / longitudeBands; // Azimuthal angle
+            float sinPhi = sin(phi);
+            float cosPhi = cos(phi);
+
+            // Base position
+            vec3 position = SetVector(
+                radius * sinTheta * cosPhi,
+                radius * sinTheta * sinPhi,
+                radius * cosTheta
+            );
+
+            // Apply deformation
+            float deformation = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * deformationStrength;
+            position = position + normalize(position) * deformation;
+
+            // Normal calculation
+            vec3 normal = normalize(position);
+
+            vertices.push_back({position, normal});
+        }
+    }
+
+    return vertices;
+}
+
+// Build a GLUGG sphere from vertices
+gluggModel buildGluggSphere(const std::vector<SphereVertex>& vertices, int latitudeBands, int longitudeBands) {
+    gluggSetPositionName("inPosition");
+    gluggSetNormalName("inNormal");
+    gluggBegin(GLUGG_TRIANGLES);
+
+    for (int lat = 0; lat < latitudeBands; ++lat) {
+        for (int lon = 0; lon < longitudeBands; ++lon) {
+            int first = lat * (longitudeBands + 1) + lon;
+            int second = first + longitudeBands + 1;
+
+            // Triangle 1
+            gluggNormalv(vertices[first].normal);
+            gluggVertexv(vertices[first].position);
+
+            gluggNormalv(vertices[second].normal);
+            gluggVertexv(vertices[second].position);
+
+            gluggNormalv(vertices[first + 1].normal);
+            gluggVertexv(vertices[first + 1].position);
+
+            // Triangle 2
+            gluggNormalv(vertices[second].normal);
+            gluggVertexv(vertices[second].position);
+
+            gluggNormalv(vertices[second + 1].normal);
+            gluggVertexv(vertices[second + 1].position);
+
+            gluggNormalv(vertices[first + 1].normal);
+            gluggVertexv(vertices[first + 1].position);
+        }
+    }
+
+    return gluggBuildModel(0);
+}
+
+
+// Function to perturb vertices for stone-like appearance
+vec3 perturbVertex(vec3 vertex, float strength) {
+    vec3 noise = vec3(
+        ((float)rand() / RAND_MAX - 0.5f) * strength,
+        ((float)rand() / RAND_MAX - 0.5f) * strength,
+        ((float)rand() / RAND_MAX - 0.5f) * strength
+    );
+
+    // Perturb along the normal direction to keep shape natural
+    return ScalarMult(normalize(vertex),(Norm(vertex) + Norm(noise)));
+}
+
+// Generate stone-like shape
+std::vector<vec3> generateStone(int tessellationLevel, float baseSize, float perturbStrength) {
+    std::vector<vec3> vertices;
+
+    // Start with a cube as the base shape
+    vec3 cubeVertices[] = {
+        SetVector(-baseSize, -baseSize, -baseSize),
+        SetVector(baseSize, -baseSize, -baseSize),
+        SetVector(baseSize, baseSize, -baseSize),
+        SetVector(-baseSize, baseSize, -baseSize),
+        SetVector(-baseSize, -baseSize, baseSize),
+        SetVector(baseSize, -baseSize, baseSize),
+        SetVector(baseSize, baseSize, baseSize),
+        SetVector(-baseSize, baseSize, baseSize)
+    };
+
+    // Add initial cube faces (6 sides)
+    int cubeIndices[] = {
+        0, 1, 2, 2, 3, 0,  // Front
+        4, 5, 6, 6, 7, 4,  // Back
+        0, 4, 7, 7, 3, 0,  // Left
+        1, 5, 6, 6, 2, 1,  // Right
+        3, 2, 6, 6, 7, 3,  // Top
+        0, 1, 5, 5, 4, 0   // Bottom
+    };
+
+    // Add faces with perturbation
+    for (int i = 0; i < sizeof(cubeIndices) / sizeof(cubeIndices[0]); i += 3) {
+        vec3 v0 = perturbVertex(cubeVertices[cubeIndices[i]], perturbStrength);
+        vec3 v1 = perturbVertex(cubeVertices[cubeIndices[i + 1]], perturbStrength);
+        vec3 v2 = perturbVertex(cubeVertices[cubeIndices[i + 2]], perturbStrength);
+
+        // Add perturbed vertices
+        vertices.push_back(v0);
+        vertices.push_back(v1);
+        vertices.push_back(v2);
+    }
+
+    return vertices;
+}
+
+// Build GLUGG stone model
+gluggModel buildStoneModel(const std::vector<vec3>& vertices) {
+
+    gluggBegin(GLUGG_TRIANGLES);
+
+    for (size_t i = 0; i < vertices.size(); i += 3) {
+        vec3 v0 = vertices[i];
+        vec3 v1 = vertices[i + 1];
+        vec3 v2 = vertices[i + 2];
+
+        vec3 normal = normalize(cross(VectorSub(v1,v0), VectorSub(v2, v0))); // Compute normal
+
+        gluggNormalv(normal);
+        gluggVertexv(v0);
+
+        gluggNormalv(normal);
+        gluggVertexv(v1);
+
+        gluggNormalv(normal);
+        gluggVertexv(v2);
+    }
+
+    return gluggBuildModel(0);
 }
 
 
@@ -312,6 +939,9 @@ std::vector<vec3> bushPos;
 //gluggModel tree1;
 gluggModel roadModel;
 std::vector<vec3> roadVertices;
+std::vector<Model *> stone;
+std::vector<vec3> stonePos;
+std::vector<float> stoneSize;
 
 float fract(float x){
     return x - floor(x);
@@ -341,29 +971,6 @@ vec2 hash2f(const vec2& p) {
     return vec2(fx, fy);
 }
 
-vec2 VectorAdd(vec2 a,vec2 b){
-    vec2 result;
-
-    result.x = a.x + b.x;
-    result.y = a.y + b.y;
-
-    return result;
-}
-
-vec2 VectorSub(vec2 a,vec2 b){
-    vec2 result;
-
-    result.x = a.x - b.x;
-    result.y = a.y - b.y;
-
-    return result;
-}
-
-float length(vec2 a){
- float result;
- result = a.x*a.x + a.y*a.y;
- return result;
-}
 
 //Taken from https://iquilezles.org/articles/smoothvoronoi/
 float smoothVoronoi(vec2 x)
@@ -455,54 +1062,53 @@ constexpr const T& clamp(const T& value, const T& lower, const T& upper) {
     return value;
 }
 
-void diamondStep(int step_size, float roughness) {
-    int half_step = step_size / 2;
-    for (int x = half_step; x < kTerrainSize; x += step_size) {
-        for (int z = half_step; z < kTerrainSize; z += step_size) {
+void diamondStep(int step_size, int half_size, float roughness) {
+    for (int x = half_size; x < kTerrainSize; x += step_size) {
+        for (int z = half_size; z < kTerrainSize; z += step_size) {
             //int tl = (z - half_step) * kTerrainSize + (x - half_step); // Top-left
             //int tr = (z - half_step) * kTerrainSize + (x + half_step); // Top-right
             //int bl = (z + half_step) * kTerrainSize + (x - half_step); // Bottom-left
             //int br = (z + half_step) * kTerrainSize + (x + half_step); // Bottom-right
-            int top = clamp(z - half_step, 0, kTerrainSize - 1);
-            int bottom = clamp(z + half_step, 0, kTerrainSize - 1);
-            int left = clamp(x - half_step, 0, kTerrainSize - 1);
-            int right = clamp(x + half_step, 0, kTerrainSize - 1);
+            /*int top = clamp(z - half_size, 0, kTerrainSize - 1);
+            int bottom = clamp(z + half_size, 0, kTerrainSize - 1);
+            int left = clamp(x - half_size, 0, kTerrainSize - 1);
+            int right = clamp(x + half_size, 0, kTerrainSize - 1);*/
 
             int center = z * kTerrainSize + x;                        // Center point
 
             //float avg_height = (vertices[tl].y + vertices[tr].y + vertices[bl].y + vertices[br].y) / 4.0f;
             float offset = (static_cast<float>(rand()) / RAND_MAX * 2.0f - 1.0f) * roughness;
             //vertices[center].y = avg_height + offset;
-            float avg = (vertices[top * kTerrainSize + left].y +
-                         vertices[top * kTerrainSize + right].y +
-                         vertices[bottom * kTerrainSize + left].y +
-                         vertices[bottom * kTerrainSize + right].y) /4.0f;
+            float avg = (vertices[(z - half_size) * kTerrainSize + (x - half_size)].y +
+                         vertices[(z - half_size) * kTerrainSize + (x + half_size)].y +
+                         vertices[(z + half_size) * kTerrainSize + (x - half_size)].y +
+                         vertices[(z + half_size) * kTerrainSize + (x + half_size)].y) /4.0f;
             vertices[center].y = avg + offset;
         }
     }
 }
 
-void squareStep(int step_size, float roughness) {
-    int half_step = step_size / 2;
-    for (int x = 0; x < kTerrainSize; x += half_step) {
-        for (int z = (x + half_step) % step_size; z < kTerrainSize; z += step_size) {
+void squareStep(int step_size, int half_size, float roughness) {
+
+    for (int x = 0; x < kTerrainSize; x += half_size) {
+        for (int z = (x + half_size) % step_size; z < kTerrainSize; z += step_size) {
             int count = 0;
             float sum = 0.0f;
 
-            if (z - half_step >= 0) { // Top
-                sum += vertices[(z - half_step) * kTerrainSize + x].y;
+            if (z - half_size >= 0) { // Top
+                sum += vertices[(z - half_size) * kTerrainSize + x].y;
                 count++;
             }
-            if (z + half_step < kTerrainSize) { // Bottom
-                sum += vertices[(z + half_step) * kTerrainSize + x].y;
+            if (z + half_size < kTerrainSize) { // Bottom
+                sum += vertices[(z + half_size) * kTerrainSize + x].y;
                 count++;
             }
-            if (x - half_step >= 0) { // Left
-                sum += vertices[z * kTerrainSize + (x - half_step)].y;
+            if (x - half_size >= 0) { // Left
+                sum += vertices[z * kTerrainSize + (x - half_size)].y;
                 count++;
             }
-            if (x + half_step < kTerrainSize) { // Right
-                sum += vertices[z * kTerrainSize + (x + half_step)].y;
+            if (x + half_size < kTerrainSize) { // Right
+                sum += vertices[z * kTerrainSize + (x + half_size)].y;
                 count++;
             }
 
@@ -510,16 +1116,19 @@ void squareStep(int step_size, float roughness) {
             float avg = sum / count;
             float offset = (static_cast<float>(rand()) / RAND_MAX * 2.0f - 1.0f) * roughness * 2.0f;
             vertices[ix].y = avg + offset;
+
         }
     }
 }
 
+//https://medium.com/@f.scaramelli0/heightmap-generation-using-the-diamond-square-algorithm-part-1-7c558aff7525
 void diamondSquare(float roughness) {
     int step_size = kTerrainSize - 1;
 
     while (step_size > 1) {
-        diamondStep(step_size, roughness);
-        squareStep(step_size, roughness);
+        int half_step = step_size / 2;
+        diamondStep(step_size, half_step, roughness);
+        squareStep(step_size, half_step, roughness);
         step_size /= 2;
         roughness *= 0.6f; // Reduce roughness for finer details
     }
@@ -555,90 +1164,6 @@ void addCraters(int numCraters, float radius, float depth) {
     }
 }
 
-/*vec3 cubeVertices[] = {
-        SetVector(-0.5f, -0.5f, -0.5f),
-        SetVector( 0.5f, -0.5f, -0.5f),
-        SetVector( 0.5f,  0.5f, -0.5f),
-        SetVector(-0.5f,  0.5f, -0.5f),
-        SetVector(-0.5f, -0.5f,  0.5f),
-        SetVector( 0.5f, -0.5f,  0.5f),
-        SetVector( 0.5f,  0.5f,  0.5f),
-        SetVector(-0.5f,  0.5f,  0.5f),
-    };
-
-    // Cube faces (indices of vertices to form triangles)
-    GLuint cubeIndices[] = {
-        0, 1, 2, 0, 2, 3, // Bottom
-        4, 5, 6, 4, 6, 7, // Top
-        0, 1, 5, 0, 5, 4, // Front
-        1, 2, 6, 1, 6, 5, // Right
-        2, 3, 7, 2, 7, 6, // Back
-        3, 0, 4, 3, 4, 7  // Left
-    };*/
-
-/* gluggModel createRock(float x, float y, float z, float size){
-    gluggSetPositionName("inPosition");
-	gluggSetNormalName("inNormal");
-	gluggSetTexCoordName("inTexCoord");
-    // Randomize vertices slightly to make the rock look more "rocky"
-    for (int i = 0; i < 8; ++i) {
-        vertices[i].x += (rand() / (float)RAND_MAX - 0.5f) * 0.1f;
-        vertices[i].y += (rand() / (float)RAND_MAX - 0.5f) * 0.1f;
-        vertices[i].z += (rand() / (float)RAND_MAX - 0.5f) * 0.1f;
-    }
-
-    // Render the rock using GLUGG
-    gluggPushMatrix();
-
-    // Translate the rock to the random position
-    gluggTranslate(x, y, z);
-
-    // Scale the rock to the specified size
-    gluggScale(size, size, size);
-
-    gluggMode(GLUGG_TRIANGLES);
-    gluggColorv(vec3(0.651, 0.651, 0.651));
-    for (int i = 0; i < 36; i += 3) {  // 36 indices for 12 triangles
-        GLuint index1 = indices[i];
-        GLuint index2 = indices[i + 1];
-        GLuint index3 = indices[i + 2];
-
-        vec3 v1 = vertices[index1];
-        vec3 v2 = vertices[index2];
-        vec3 v3 = vertices[index3];
-
-        vec3 normal = normalize(cross(v2 - v1, v3 - v1));  // Normal for the triangle face
-
-        gluggNormalv(normal);  // Set normal
-        gluggVertexv(v1);      // Set vertex
-        gluggVertexv(v2);      // Set vertex
-        gluggVertexv(v3);      // Set vertex
-    }
-    gluggPopMatrix();
-
-    return gluggBuildModel(0);
-}
-
-
-
-// Function to generate random low-poly rock
-void GenerateRocks(int count)
-{
-    for (int i = 0; i < count; ++i)
-    {
-        // Random position for each rock
-        float x = ((rand() % 100) - 50) * 1.0f;  // Random X between -50 and 50
-        float z = ((rand() % 100) - 50) * 1.0f;  // Random Z between -50 and 50
-        float y = 0.0f;  // Assuming y is 0 for now, or you can use terrain height for y
-
-        // Random size for each rock
-        float size = (rand() / (float)RAND_MAX) * 0.5f + 0.5f;  // Random size between 0.5 and 1.0
-
-        // Generate the rock
-        createRock(x, y, z, size);
-    }
-}*/
-
 
 //Taken from lab 3b
 void MakeTerrain()
@@ -671,9 +1196,10 @@ void MakeTerrain()
     vertices[(kTerrainSize - 1) * kTerrainSize].y = 3 - static_cast<float>(rand()) / RAND_MAX;
     vertices[kTerrainSize * (kTerrainSize - 1)].y = 2 + static_cast<float>(rand()) / RAND_MAX;
     vertices[kTerrainSize * kTerrainSize - 1].y = static_cast<float>(rand()) / RAND_MAX - 4;
-	diamondSquare(10.5f);
+	diamondSquare(3.5f);
+	addCraters(1, 20, 10);
+	addCraters(1, 30 , -10);
 	smoothTerrain();
-	//addCraters(1, 20, 10);
 
 
 
@@ -774,8 +1300,15 @@ void reshape(int w, int h)
 	glUniformMatrix4fv(glGetUniformLocation(phongShader, "projectionMatrix"), 1, GL_TRUE, projectionMatrix.m);
 	glUseProgram(texShader);
 	glUniformMatrix4fv(glGetUniformLocation(texShader, "projectionMatrix"), 1, GL_TRUE, projectionMatrix.m);
+	glUseProgram(stoneShader);
+	glUniformMatrix4fv(glGetUniformLocation(stoneShader, "projMatrix"), 1, GL_TRUE, projectionMatrix.m);
+	glUniform1i(glGetUniformLocation(stoneShader, "TessLevelInner"), TessLevelInner);
+	glUniform1i(glGetUniformLocation(stoneShader, "TessLevelOuter1"), TessLevelOuter1);
+	glUniform1i(glGetUniformLocation(stoneShader, "TessLevelOuter2"), TessLevelOuter2);
+	glUniform1i(glGetUniformLocation(stoneShader, "TessLevelOuter3"), TessLevelOuter3);
 }
 
+gluggModel stoneModel;
 
 void init(void)
 {
@@ -784,15 +1317,29 @@ void init(void)
 	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 	glEnable(GL_BLEND);
+	glCullFace(GL_TRUE);
+    glCullFace(GL_BACK);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	printError("GL inits");
 
+
 	projectionMatrix = frustum(-0.1, 0.1, -0.1, 0.1, 0.2, 300.0);
+	worldToViewMatrix = lookAt(0, 0, 3, 0,0,0, 0,1,0);
+	modelToWorldMatrix = IdentityMatrix();
 
 	// Load and compile shader
 	phongShader = loadShaders("phong.vert", "phong.frag");
 	texShader = loadShaders("textured.vert", "textured.frag");
-	printError("init shader");
+	stoneShader = loadShadersGT("lab4.vs", "lab4.fs", "lab4.gs",
+                                "lab4.tcs", "lab4.tes");
+
+    printError("init shader");
+
+
+    glUniform1i(glGetUniformLocation(stoneShader, "TessLevelInner"), TessLevelInner);
+    glUniform1i(glGetUniformLocation(stoneShader, "TessLevelOuter1"), TessLevelOuter1);
+    glUniform1i(glGetUniformLocation(stoneShader, "TessLevelOuter2"), TessLevelOuter2);
+    glUniform1i(glGetUniformLocation(stoneShader, "TessLevelOuter3"), TessLevelOuter3);
 
 	// Upload geometry to the GPU:
 	//OLD
@@ -811,6 +1358,13 @@ void init(void)
     watermodel = LoadDataToModel(verticeswater, normalswater, texCoordswater, NULL,
 			indiceswater, kTerrainSize*kTerrainSize, (kTerrainSize-1)*(kTerrainSize-1)*2*3);
     roadModel = MakeRoad(roadVertices);
+
+    // Upload matrices that we do not intend to change.
+    glUseProgram(stoneShader);
+    generateStones(stone, stonePos, stoneSize ,treePos, bushPos, 5);
+	glUniformMatrix4fv(glGetUniformLocation(stoneShader, "camMatrix"), 1, GL_TRUE, modelToWorldMatrix.m);
+	glUniformMatrix4fv(glGetUniformLocation(stoneShader, "projMatrix"), 1, GL_TRUE, projectionMatrix.m);
+
 
 // Important! The shader we upload to must be active!
 	glUseProgram(phongShader);
@@ -831,8 +1385,18 @@ void init(void)
 
 	LoadTGATextureSimple("ivyleaf.tga", &leaftex);
 
-    generateTrees(tree, treePos, 1);
-    generateBush(bush, bushPos, 1);
+    generateTrees(tree, treePos, 100);
+    generateBush(bush, bushPos, treePos, 100);
+    //generateStones(stone, stonePos, stoneSize, treePos, bushPos, 2);
+    //stoneModel = MakeRealisticStone(10, 1.0f, 0.2f); // Higher tessLevel for smoother stones
+    float baseSize = 1.0f;
+    float perturbStrength = 0.3f;
+
+    // Generate vertices for the stone
+    auto stoneVertices = generateStone(10, baseSize, perturbStrength);
+
+    // Build GLUGG stone model
+    gluggModel stoneModel = buildStoneModel(stoneVertices);
 
 	//tree = MakeTree();
 	//tree1 = MakeTree();
@@ -859,6 +1423,7 @@ vec3 up = vec3(0, 1, 0);
 void display(void)
 {
 	printError("pre display");
+
 
 	// clear the screen
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -905,6 +1470,7 @@ void display(void)
 	}
 
 	worldToView = lookAtv(campos, campos + forward, up);
+	//modelToWorldMatrix = m * modelToWorldMatrix;
 
 	a += 0.1;
 
@@ -913,41 +1479,29 @@ void display(void)
 	glUseProgram(texShader);
 	m = worldToView;
 	glUniformMatrix4fv(glGetUniformLocation(texShader, "modelviewMatrix"), 1, GL_TRUE, m.m);
+	glUseProgram(stoneShader);
+	//glUniformMatrix4fv(glGetUniformLocation(stoneShader, "camMatrix"), 1, GL_TRUE, m.m);
 	DrawModel(floormodel, texShader, "inPosition", "inNormal", "inTexCoord");
 
     glBindTexture(GL_TEXTURE_2D, watertex);
 	glUseProgram(texShader);
 
-    //DrawModel(watermodel, texShader, "inPosition", "inNormal", "inTexCoord");
+    DrawModel(watermodel, texShader, "inPosition", "inNormal", "inTexCoord");
 
 	// Draw the tree, as defined on MakeTree
 	glBindTexture(GL_TEXTURE_2D, barktex);
 	glUseProgram(texShader);
 
-    /*
-    m = worldToView * T(0, 0, 0);
-    glUniformMatrix4fv(glGetUniformLocation(texShader, "modelviewMatrix"), 1, GL_TRUE, m.m);
-    gluggDrawModel(tree[0], texShader);
-
-
-    m = worldToView * T(1, 0, 0);
-    glUniformMatrix4fv(glGetUniformLocation(texShader, "modelviewMatrix"), 1, GL_TRUE, m.m);
-	gluggDrawModel(tree1, texShader);
-    */
-
-    /*for(int i = 0; i < tree.size(); i++){
-        m = worldToView * T(treePos[i].x, treePos[i].y, treePos[i].z);
-        glUniformMatrix4fv(glGetUniformLocation(texShader, "modelviewMatrix"), 1, GL_TRUE, m.m);
-        gluggDrawModel(tree[i], texShader);
-    }*/
-
-
-
     buildTrees(worldToView, texShader, tree, treePos);
     buildBush(worldToView, texShader, bush, bushPos);
 
+    buildStone(m, stone, stonePos, stoneSize, stoneShader);
+
     buildRoad(roadModel, worldToView);
 
+    //m = worldToView * T(0, 5, 0);
+    //glUniformMatrix4fv(glGetUniformLocation(texShader, "modelviewMatrix"), 1, GL_TRUE, m.m);
+    //gluggDrawModel(stoneModel, texShader);
     /*
 	m = buildTree((0,4,0),worldToView,m,0);
 	m = buildTree((0,4,0),worldToView,m,1);
@@ -967,13 +1521,19 @@ void keys(unsigned char key, int x, int y)
 			forward = normalize(forward) * 4.0;
 			break;
 	}
+	glutPostRedisplay();
 }
 
 
 int main(int argc, char *argv[])
 {
 	glutInit(&argc, argv);
-	glutInitContextVersion(3, 2);
+
+
+    // Request (for example) an OpenGL 4.1 Core profile context
+    glutInitContextVersion(4, 1);
+
+	//glutInitContextVersion(3, 2);
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
 	glutInitWindowPosition(100,100);
 	glutInitWindowSize(640,360);
@@ -984,4 +1544,5 @@ int main(int argc, char *argv[])
 	glutReshapeFunc(reshape);
 	init ();
 	glutMainLoop();
+	exit(0);
 }

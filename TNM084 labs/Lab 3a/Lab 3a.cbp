@@ -53,6 +53,11 @@
 		</Unit>
 		<Unit filename="glugg.h" />
 		<Unit filename="lab3a.cpp" />
+		<Unit filename="lab4.fs" />
+		<Unit filename="lab4.gs" />
+		<Unit filename="lab4.tcs" />
+		<Unit filename="lab4.tes" />
+		<Unit filename="lab4.vs" />
 		<Extensions>
 			<lib_finder disable_auto="1" />
 		</Extensions>
