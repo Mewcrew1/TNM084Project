@@ -161,7 +161,7 @@ mat4 worldToView;
 mat4 modelToWorldMatrix;
 
 Model *floormodel, *watermodel;
-GLuint grasstex, barktex, leaftex,watertex;
+GLuint grasstex, barktex, leaftex,watertex,stonetex;
 
 // Reference to shader programs
 GLuint phongShader, texShader, stoneShader;
@@ -684,6 +684,7 @@ void buildStone(mat4 worldToViewMatrix, std::vector<Model*>& stone, std::vector<
 
         // Render the stone
         //DrawModel(stones[i], shader, "in_Position", "in_Normal", "in_TexCoord");
+        glBindTexture(GL_TEXTURE_2D, stonetex);
          DrawPatchModel(stone[i], shader, "in_Position", "in_Normal", "in_TexCoord");
 
     }
@@ -1357,6 +1358,8 @@ void init(void)
 
 	LoadTGATextureSimple("ivyleaf.tga", &leaftex);
 
+	LoadTGATextureSimple("granite.tga", &stonetex);
+
     generateTrees(tree, treePos, 100);
     generateBush(bush, bushPos, treePos, 100);
 
@@ -1433,7 +1436,7 @@ void display(void)
 	glUseProgram(texShader);
 	m = worldToView;
 	glUniformMatrix4fv(glGetUniformLocation(texShader, "modelviewMatrix"), 1, GL_TRUE, m.m);
-	glUseProgram(stoneShader);
+
 
 	DrawModel(floormodel, texShader, "inPosition", "inNormal", "inTexCoord");
 
@@ -1450,6 +1453,7 @@ void display(void)
     buildBush(worldToView, texShader, bush, bushPos);
 
     glUseProgram(stoneShader);
+
     buildStone(worldToView, stone, stonePos, stoneSize, stoneShader);
 
     buildRoad(roadModel, worldToView);

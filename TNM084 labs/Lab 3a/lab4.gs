@@ -145,7 +145,7 @@ void computeVertex(int nr)
     gsTexCoord = teTexCoord[0];
 
 	n = teNormal[nr]; // This is not the normal you are looking for. Move along!
-    gsNormal = mat3(camMatrix * mdlMatrix) * normal;
+    gsNormal = mat3(mdlMatrix) * normal;
 
     //gsNormal = normal;
 
