@@ -12,7 +12,9 @@ uniform sampler2D tex;
 
 uniform mat4 projMatrix;
 uniform mat4 mdlMatrix;
-uniform mat4 camMatrix;
+
+//test
+//uniform mat4 camMatrix;
 
 uniform float disp;
 uniform int texon;
@@ -139,7 +141,8 @@ void computeVertex(int nr)
 	vec3 normal = cross(ortpunktvec1,ortpunktvec2);
     normal = normalize(normal);
 
-	gl_Position = projMatrix * camMatrix * mdlMatrix * vec4(p, 1.0);
+	//gl_Position = projMatrix * camMatrix * mdlMatrix * vec4(p, 1.0);
+	gl_Position = projMatrix * mdlMatrix * vec4(p, 1.0);
 
     gsTexCoord = teTexCoord[0];
 

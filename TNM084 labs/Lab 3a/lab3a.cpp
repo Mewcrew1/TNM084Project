@@ -24,12 +24,12 @@
 
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 #define MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
-#define waterHeight -6.0
+#define waterHeight -0.0
 
-GLint TessLevelInner = 2;
-GLint TessLevelOuter1 = 2;
-GLint TessLevelOuter2 = 2;
-GLint TessLevelOuter3 = 2;
+GLint TessLevelInner = 10;
+GLint TessLevelOuter1 = 10;
+GLint TessLevelOuter2 = 10;
+GLint TessLevelOuter3 = 10;
 
 // ------------ DrawPatchModel: modified utility function DrawModel from LittleOBJLoader ---------------
 static void ReportRerror(const char *caller, const char *name)
@@ -151,6 +151,8 @@ void MakeCylinderAlt(int aSlices, float height, float topwidth, float bottomwidt
 
 
 mat4 projectionMatrix;
+mat4 worldToViewMatrix;
+mat4 modelToWorldMatrix;
 
 Model *floormodel, *watermodel;
 GLuint grasstex, barktex, leaftex,watertex;
@@ -288,7 +290,7 @@ void Recursion(int depth, float height, float topWidth, float bottomWidth, float
     // Flytta till toppen av den aktuella grenen
     gluggTranslate(0, height, 0);
 
-    /*// V�nster gren
+    // V�nster gren
     gluggPushMatrix(); // Spara nuvarande transformation (undvika att kommade grenar p�verkar denna grens transformationer)
     gluggRotate((rand()%2) - 0.5, (rand()%2) - 0.5, (rand()%2) - 0.5, 1);
     Recursion(depth - 1 - rand()%2, (height * 0.7), topWidth * 0.7, topWidth, angle); // Rekursivt call f�r n�sta djup av grenar
@@ -307,7 +309,7 @@ void Recursion(int depth, float height, float topWidth, float bottomWidth, float
     gluggPopMatrix(); // �terst�ll transformationen (undvika att n�sta gren inte p�verkas av denna grens transformationer)*/
 
     // Generate child branches with small rotational differences
-    int branchCount = 2 + rand() % 2; // 2 to 3 branches per level
+    /*int branchCount = 2 + rand() % 2; // 2 to 3 branches per level
     float baseAngleX = 10.0f; // Base upward tilt
     float baseAngleY = angle; // Maintain current branch's Y-axis direction
 
@@ -330,7 +332,7 @@ void Recursion(int depth, float height, float topWidth, float bottomWidth, float
         Recursion(depth - 1, newHeight, newTopWidth, newBottomWidth, angle);
 
         gluggPopMatrix();
-    }
+    }*/
 }
 
 gluggModel MakeTree()
@@ -474,7 +476,7 @@ void buildBush(mat4 worldToView, GLuint texShader, std::vector<gluggModel> bush,
     }
 }
 
-/*Model *MakeStone() {
+Model *MakeStone() {
     Model *stone = LoadModelPlus("cube.obj");
     return stone;
 }
@@ -496,7 +498,7 @@ void generateStones(std::vector<Model*>& stone, std::vector<vec3>& stonePos, std
             continue;
         }
 
-        float stoneHeight = vertices[ix].y;
+        float stoneHeight = vertices[ix].y + 1.0f;
         if(stoneHeight < waterHeight){
             continue;
         }
@@ -536,12 +538,12 @@ void generateStones(std::vector<Model*>& stone, std::vector<vec3>& stonePos, std
     }
 }
 
-void buildStone(mat4 modelToWorldMatrix, std::vector<Model*>& stone, std::vector<vec3>& stonePos, std::vector<float>& stoneSize, GLuint shader) {
+void buildStone(mat4 worldToViewMatrix, std::vector<Model*>& stone, std::vector<vec3>& stonePos, std::vector<float>& stoneSize, GLuint shader) {
     mat4 m;
     for (size_t i = 0; i < stone.size(); ++i) {
 
         //m = worldToView * T(stonePos[i].x, stonePos[i].y, stonePos[i].z) * S(stoneSize[i], stoneSize[i], stoneSize[i]);;
-        m = modelToWorldMatrix * T(stonePos[i].x, stonePos[i].y, stonePos[i].z);
+        m = worldToViewMatrix * T(stonePos[i].x, 5 + stonePos[i].y, stonePos[i].z) * S(10 * stoneSize[i], 10 * stoneSize[i], 10 * stoneSize[i]);
 
         // Upload the transformation matrix
         glUniformMatrix4fv(glGetUniformLocation(shader, "mdlMatrix"), 1, GL_TRUE, m.m);
@@ -551,9 +553,9 @@ void buildStone(mat4 modelToWorldMatrix, std::vector<Model*>& stone, std::vector
          DrawPatchModel(stone[i], shader, "in_Position", "in_Normal", "in_TexCoord");
 
     }
-}*/
+}
 
-float Noise(float x, float y, float z) {
+/*float Noise(float x, float y, float z) {
     return (sin(x * 12.9898 + y * 78.233 + z * 37.719) * 43758.5453);
 }
 
@@ -715,7 +717,8 @@ void buildStone(mat4 worldToView, GLuint texShader, std::vector<gluggModel> ston
         glUniformMatrix4fv(glGetUniformLocation(texShader, "modelviewMatrix"), 1, GL_TRUE, m.m);
         gluggDrawModel(stone[i], texShader);
     }
-}
+}*/
+
 
 // Add random perturbation for a less spherical shape
 vec3 perturb(vec3 p, float intensity) {
@@ -723,11 +726,11 @@ vec3 perturb(vec3 p, float intensity) {
     return p + SetVector(offset, offset, offset);
 }
 
-// Recursive tessellation function using glugg
+// Recursive tessellation function using GLUGG
 void tessellateTriangleGlugg(vec3 p1, vec3 p2, vec3 p3, int tessLevel, float perturbation) {
     if (tessLevel == 0) {
-        // Add the triangle to glugg
-        gluggNormalv(normalize(cross(p2 - p1, p3 - p1))); // Compute face normal
+        // Add the triangle to GLUGG
+        gluggNormalv(normalize(cross(VectorSub(p2, p1), VectorSub(p3,p1)))); // Compute face normal
         gluggVertexv(p1);
         gluggVertexv(p2);
         gluggVertexv(p3);
@@ -753,12 +756,8 @@ void tessellateTriangleGlugg(vec3 p1, vec3 p2, vec3 p3, int tessLevel, float per
     tessellateTriangleGlugg(m1, m2, m3, tessLevel - 1, perturbation);
 }
 
-// Create a tessellated stone model using glugg
-gluggModel MakeTessellatedStone(int tessLevel = 3, float radius = 1.0f, float perturbation = 0.1f) {
-    gluggSetPositionName("inPosition");
-    gluggSetNormalName("inNormal");
-    gluggSetTexCoordName("inTexCoord");
-
+// Create a tessellated stone model using GLUGG
+gluggModel MakeRealisticStone(int tessLevel = 3, float radius = 1.0f, float perturbation = 0.1f) {
     gluggBegin(GLUGG_TRIANGLES);
 
     // Initial tetrahedron for the sphere
@@ -768,10 +767,166 @@ gluggModel MakeTessellatedStone(int tessLevel = 3, float radius = 1.0f, float pe
     vec3 p4 = normalize(SetVector(0, -1, 1.0f / sqrt(2))) * radius;
 
     // Tessellate each face of the tetrahedron
-    tessellateTriangleGlugg(p1, p2, p3, tessLevel, perturbation);
-    tessellateTriangleGlugg(p1, p3, p4, tessLevel, perturbation);
-    tessellateTriangleGlugg(p1, p4, p2, tessLevel, perturbation);
-    tessellateTriangleGlugg(p2, p4, p3, tessLevel, perturbation);
+    tessellateTriangleGlugg(p1, p2, p3, tessLevel, perturbation*0.1);
+    tessellateTriangleGlugg(p1, p3, p4, tessLevel, perturbation*0.1);
+    tessellateTriangleGlugg(p1, p4, p2, tessLevel, perturbation*0.1);
+    tessellateTriangleGlugg(p2, p4, p3, tessLevel, perturbation*0.1);
+
+    return gluggBuildModel(0);
+}
+
+// Struct to store sphere vertices for deformation
+struct SphereVertex {
+    vec3 position;
+    vec3 normal;
+};
+
+// Generate a smooth sphere with deformation
+std::vector<SphereVertex> generateDeformedSphere(int latitudeBands, int longitudeBands, float radius, float deformationStrength) {
+    std::vector<SphereVertex> vertices;
+
+    for (int lat = 0; lat <= latitudeBands; ++lat) {
+        float theta = lat * M_PI / latitudeBands; // Polar angle
+        float sinTheta = sin(theta);
+        float cosTheta = cos(theta);
+
+        for (int lon = 0; lon <= longitudeBands; ++lon) {
+            float phi = lon * 2.0 * M_PI / longitudeBands; // Azimuthal angle
+            float sinPhi = sin(phi);
+            float cosPhi = cos(phi);
+
+            // Base position
+            vec3 position = SetVector(
+                radius * sinTheta * cosPhi,
+                radius * sinTheta * sinPhi,
+                radius * cosTheta
+            );
+
+            // Apply deformation
+            float deformation = ((float)rand() / RAND_MAX - 0.5f) * 2.0f * deformationStrength;
+            position = position + normalize(position) * deformation;
+
+            // Normal calculation
+            vec3 normal = normalize(position);
+
+            vertices.push_back({position, normal});
+        }
+    }
+
+    return vertices;
+}
+
+// Build a GLUGG sphere from vertices
+gluggModel buildGluggSphere(const std::vector<SphereVertex>& vertices, int latitudeBands, int longitudeBands) {
+    gluggSetPositionName("inPosition");
+    gluggSetNormalName("inNormal");
+    gluggBegin(GLUGG_TRIANGLES);
+
+    for (int lat = 0; lat < latitudeBands; ++lat) {
+        for (int lon = 0; lon < longitudeBands; ++lon) {
+            int first = lat * (longitudeBands + 1) + lon;
+            int second = first + longitudeBands + 1;
+
+            // Triangle 1
+            gluggNormalv(vertices[first].normal);
+            gluggVertexv(vertices[first].position);
+
+            gluggNormalv(vertices[second].normal);
+            gluggVertexv(vertices[second].position);
+
+            gluggNormalv(vertices[first + 1].normal);
+            gluggVertexv(vertices[first + 1].position);
+
+            // Triangle 2
+            gluggNormalv(vertices[second].normal);
+            gluggVertexv(vertices[second].position);
+
+            gluggNormalv(vertices[second + 1].normal);
+            gluggVertexv(vertices[second + 1].position);
+
+            gluggNormalv(vertices[first + 1].normal);
+            gluggVertexv(vertices[first + 1].position);
+        }
+    }
+
+    return gluggBuildModel(0);
+}
+
+
+// Function to perturb vertices for stone-like appearance
+vec3 perturbVertex(vec3 vertex, float strength) {
+    vec3 noise = vec3(
+        ((float)rand() / RAND_MAX - 0.5f) * strength,
+        ((float)rand() / RAND_MAX - 0.5f) * strength,
+        ((float)rand() / RAND_MAX - 0.5f) * strength
+    );
+
+    // Perturb along the normal direction to keep shape natural
+    return ScalarMult(normalize(vertex),(Norm(vertex) + Norm(noise)));
+}
+
+// Generate stone-like shape
+std::vector<vec3> generateStone(int tessellationLevel, float baseSize, float perturbStrength) {
+    std::vector<vec3> vertices;
+
+    // Start with a cube as the base shape
+    vec3 cubeVertices[] = {
+        SetVector(-baseSize, -baseSize, -baseSize),
+        SetVector(baseSize, -baseSize, -baseSize),
+        SetVector(baseSize, baseSize, -baseSize),
+        SetVector(-baseSize, baseSize, -baseSize),
+        SetVector(-baseSize, -baseSize, baseSize),
+        SetVector(baseSize, -baseSize, baseSize),
+        SetVector(baseSize, baseSize, baseSize),
+        SetVector(-baseSize, baseSize, baseSize)
+    };
+
+    // Add initial cube faces (6 sides)
+    int cubeIndices[] = {
+        0, 1, 2, 2, 3, 0,  // Front
+        4, 5, 6, 6, 7, 4,  // Back
+        0, 4, 7, 7, 3, 0,  // Left
+        1, 5, 6, 6, 2, 1,  // Right
+        3, 2, 6, 6, 7, 3,  // Top
+        0, 1, 5, 5, 4, 0   // Bottom
+    };
+
+    // Add faces with perturbation
+    for (int i = 0; i < sizeof(cubeIndices) / sizeof(cubeIndices[0]); i += 3) {
+        vec3 v0 = perturbVertex(cubeVertices[cubeIndices[i]], perturbStrength);
+        vec3 v1 = perturbVertex(cubeVertices[cubeIndices[i + 1]], perturbStrength);
+        vec3 v2 = perturbVertex(cubeVertices[cubeIndices[i + 2]], perturbStrength);
+
+        // Add perturbed vertices
+        vertices.push_back(v0);
+        vertices.push_back(v1);
+        vertices.push_back(v2);
+    }
+
+    return vertices;
+}
+
+// Build GLUGG stone model
+gluggModel buildStoneModel(const std::vector<vec3>& vertices) {
+
+    gluggBegin(GLUGG_TRIANGLES);
+
+    for (size_t i = 0; i < vertices.size(); i += 3) {
+        vec3 v0 = vertices[i];
+        vec3 v1 = vertices[i + 1];
+        vec3 v2 = vertices[i + 2];
+
+        vec3 normal = normalize(cross(VectorSub(v1,v0), VectorSub(v2, v0))); // Compute normal
+
+        gluggNormalv(normal);
+        gluggVertexv(v0);
+
+        gluggNormalv(normal);
+        gluggVertexv(v1);
+
+        gluggNormalv(normal);
+        gluggVertexv(v2);
+    }
 
     return gluggBuildModel(0);
 }
@@ -784,7 +939,7 @@ std::vector<vec3> bushPos;
 //gluggModel tree1;
 gluggModel roadModel;
 std::vector<vec3> roadVertices;
-std::vector<gluggModel> stone;
+std::vector<Model *> stone;
 std::vector<vec3> stonePos;
 std::vector<float> stoneSize;
 
@@ -1042,8 +1197,9 @@ void MakeTerrain()
     vertices[kTerrainSize * (kTerrainSize - 1)].y = 2 + static_cast<float>(rand()) / RAND_MAX;
     vertices[kTerrainSize * kTerrainSize - 1].y = static_cast<float>(rand()) / RAND_MAX - 4;
 	diamondSquare(3.5f);
-	smoothTerrain();
 	addCraters(1, 20, 10);
+	addCraters(1, 30 , -10);
+	smoothTerrain();
 
 
 
@@ -1144,8 +1300,16 @@ void reshape(int w, int h)
 	glUniformMatrix4fv(glGetUniformLocation(phongShader, "projectionMatrix"), 1, GL_TRUE, projectionMatrix.m);
 	glUseProgram(texShader);
 	glUniformMatrix4fv(glGetUniformLocation(texShader, "projectionMatrix"), 1, GL_TRUE, projectionMatrix.m);
+	glUseProgram(stoneShader);
+	glUniformMatrix4fv(glGetUniformLocation(stoneShader, "projMatrix"), 1, GL_TRUE, projectionMatrix.m);
+	glUniform1i(glGetUniformLocation(stoneShader, "TessLevelInner"), TessLevelInner);
+	glUniform1i(glGetUniformLocation(stoneShader, "TessLevelOuter1"), TessLevelOuter1);
+	glUniform1i(glGetUniformLocation(stoneShader, "TessLevelOuter2"), TessLevelOuter2);
+	glUniform1i(glGetUniformLocation(stoneShader, "TessLevelOuter3"), TessLevelOuter3);
 }
+
 gluggModel stoneModel;
+
 void init(void)
 {
 	// GL inits
@@ -1160,21 +1324,22 @@ void init(void)
 
 
 	projectionMatrix = frustum(-0.1, 0.1, -0.1, 0.1, 0.2, 300.0);
-	//mat4 worldToViewMatrix = lookAtv(vec3(0, 1.5, 10), vec3(0, 0, 0), vec3(0, 1, 0));
+	worldToViewMatrix = lookAt(0, 0, 3, 0,0,0, 0,1,0);
+	modelToWorldMatrix = IdentityMatrix();
 
 	// Load and compile shader
 	phongShader = loadShaders("phong.vert", "phong.frag");
 	texShader = loadShaders("textured.vert", "textured.frag");
-	//stoneShader = loadShadersGT("lab4.vs", "lab4.fs", "lab4.gs",
-                                //"lab4.tcs", "lab4.tes");
+	stoneShader = loadShadersGT("lab4.vs", "lab4.fs", "lab4.gs",
+                                "lab4.tcs", "lab4.tes");
 
     printError("init shader");
 
 
-    /*glUniform1i(glGetUniformLocation(stoneShader, "TessLevelInner"), TessLevelInner);
+    glUniform1i(glGetUniformLocation(stoneShader, "TessLevelInner"), TessLevelInner);
     glUniform1i(glGetUniformLocation(stoneShader, "TessLevelOuter1"), TessLevelOuter1);
     glUniform1i(glGetUniformLocation(stoneShader, "TessLevelOuter2"), TessLevelOuter2);
-    glUniform1i(glGetUniformLocation(stoneShader, "TessLevelOuter3"), TessLevelOuter3);*/
+    glUniform1i(glGetUniformLocation(stoneShader, "TessLevelOuter3"), TessLevelOuter3);
 
 	// Upload geometry to the GPU:
 	//OLD
@@ -1196,9 +1361,8 @@ void init(void)
 
     // Upload matrices that we do not intend to change.
     glUseProgram(stoneShader);
-    //generateStones(stone, stonePos, stoneSize ,treePos, bushPos, 1);
-    mat4 worldToViewMatrix = lookAt(0, 2, 10, 0, 0, 0, 0, 1, 0);
-	glUniformMatrix4fv(glGetUniformLocation(stoneShader, "camMatrix"), 1, GL_TRUE, worldToViewMatrix.m);
+    generateStones(stone, stonePos, stoneSize ,treePos, bushPos, 5);
+	glUniformMatrix4fv(glGetUniformLocation(stoneShader, "camMatrix"), 1, GL_TRUE, modelToWorldMatrix.m);
 	glUniformMatrix4fv(glGetUniformLocation(stoneShader, "projMatrix"), 1, GL_TRUE, projectionMatrix.m);
 
 
@@ -1221,10 +1385,18 @@ void init(void)
 
 	LoadTGATextureSimple("ivyleaf.tga", &leaftex);
 
-    generateTrees(tree, treePos, 2);
-    generateBush(bush, bushPos, treePos, 2);
-    generateStones(stone, stonePos, stoneSize, treePos, bushPos, 2);
-    stoneModel = MakeTessellatedStone(4, 1.0f, 0.15f); // Higher tessLevel for smoother stones
+    generateTrees(tree, treePos, 100);
+    generateBush(bush, bushPos, treePos, 100);
+    //generateStones(stone, stonePos, stoneSize, treePos, bushPos, 2);
+    //stoneModel = MakeRealisticStone(10, 1.0f, 0.2f); // Higher tessLevel for smoother stones
+    float baseSize = 1.0f;
+    float perturbStrength = 0.3f;
+
+    // Generate vertices for the stone
+    auto stoneVertices = generateStone(10, baseSize, perturbStrength);
+
+    // Build GLUGG stone model
+    gluggModel stoneModel = buildStoneModel(stoneVertices);
 
 	//tree = MakeTree();
 	//tree1 = MakeTree();
@@ -1298,6 +1470,7 @@ void display(void)
 	}
 
 	worldToView = lookAtv(campos, campos + forward, up);
+	//modelToWorldMatrix = m * modelToWorldMatrix;
 
 	a += 0.1;
 
@@ -1306,7 +1479,8 @@ void display(void)
 	glUseProgram(texShader);
 	m = worldToView;
 	glUniformMatrix4fv(glGetUniformLocation(texShader, "modelviewMatrix"), 1, GL_TRUE, m.m);
-	glUniformMatrix4fv(glGetUniformLocation(stoneShader, "camMatrix"), 1, GL_TRUE, worldToView.m);
+	glUseProgram(stoneShader);
+	//glUniformMatrix4fv(glGetUniformLocation(stoneShader, "camMatrix"), 1, GL_TRUE, m.m);
 	DrawModel(floormodel, texShader, "inPosition", "inNormal", "inTexCoord");
 
     glBindTexture(GL_TEXTURE_2D, watertex);
@@ -1318,34 +1492,16 @@ void display(void)
 	glBindTexture(GL_TEXTURE_2D, barktex);
 	glUseProgram(texShader);
 
-    /*
-    m = worldToView * T(0, 0, 0);
-    glUniformMatrix4fv(glGetUniformLocation(texShader, "modelviewMatrix"), 1, GL_TRUE, m.m);
-    gluggDrawModel(tree[0], texShader);
-
-
-    m = worldToView * T(1, 0, 0);
-    glUniformMatrix4fv(glGetUniformLocation(texShader, "modelviewMatrix"), 1, GL_TRUE, m.m);
-	gluggDrawModel(tree1, texShader);
-    */
-
-    /*for(int i = 0; i < tree.size(); i++){
-        m = worldToView * T(treePos[i].x, treePos[i].y, treePos[i].z);
-        glUniformMatrix4fv(glGetUniformLocation(texShader, "modelviewMatrix"), 1, GL_TRUE, m.m);
-        gluggDrawModel(tree[i], texShader);
-    }*/
-    glUniform1i(glGetUniformLocation(stoneShader, "TessLevelInner"), TessLevelInner);
-    glUniform1i(glGetUniformLocation(stoneShader, "TessLevelOuter1"), TessLevelOuter1);
-    glUniform1i(glGetUniformLocation(stoneShader, "TessLevelOuter2"), TessLevelOuter2);
-    glUniform1i(glGetUniformLocation(stoneShader, "TessLevelOuter3"), TessLevelOuter3);
     buildTrees(worldToView, texShader, tree, treePos);
     buildBush(worldToView, texShader, bush, bushPos);
-    buildStone(worldToView, texShader, stone, stonePos);
+
+    buildStone(m, stone, stonePos, stoneSize, stoneShader);
+
     buildRoad(roadModel, worldToView);
 
-    m = worldToView * T(0, 0, 0);
-        glUniformMatrix4fv(glGetUniformLocation(texShader, "modelviewMatrix"), 1, GL_TRUE, m.m);
-        gluggDrawModel(stoneModel, texShader);
+    //m = worldToView * T(0, 5, 0);
+    //glUniformMatrix4fv(glGetUniformLocation(texShader, "modelviewMatrix"), 1, GL_TRUE, m.m);
+    //gluggDrawModel(stoneModel, texShader);
     /*
 	m = buildTree((0,4,0),worldToView,m,0);
 	m = buildTree((0,4,0),worldToView,m,1);
@@ -1365,13 +1521,19 @@ void keys(unsigned char key, int x, int y)
 			forward = normalize(forward) * 4.0;
 			break;
 	}
+	glutPostRedisplay();
 }
 
 
 int main(int argc, char *argv[])
 {
 	glutInit(&argc, argv);
-	glutInitContextVersion(3, 2);
+
+
+    // Request (for example) an OpenGL 4.1 Core profile context
+    glutInitContextVersion(4, 1);
+
+	//glutInitContextVersion(3, 2);
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
 	glutInitWindowPosition(100,100);
 	glutInitWindowSize(640,360);

@@ -140,6 +140,7 @@ void computeVertex(int nr)
     normal = normalize(normal);
 
 	gl_Position = projMatrix * camMatrix * mdlMatrix * vec4(p, 1.0);
+	//gl_Position = projMatrix * mdlMatrix * vec4(p, 1.0);
 
     gsTexCoord = teTexCoord[0];
 
