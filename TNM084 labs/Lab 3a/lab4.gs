@@ -129,7 +129,7 @@ void computeVertex(int nr)
 
 	//p = p + noise(p*4)/9;
 
-	p = p + p * fbm(normvec ,0.5)/3;
+	p = p + p * fbm(normvec ,0.5) * 0.8;
 
 	ortpunkt1 = ortpunkt1 + ortpunkt1 * fbm(ortpunkt1,0.5)/4;
 	ortpunkt2 = ortpunkt2 + ortpunkt2 * fbm(ortpunkt2,0.5)/4;

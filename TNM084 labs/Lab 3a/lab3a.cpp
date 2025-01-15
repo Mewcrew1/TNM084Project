@@ -24,12 +24,18 @@
 
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 #define MAX(X, Y) (((X) > (Y)) ? (X) : (Y))
-#define waterHeight -0.0
+#define waterHeight -1.0
 
 GLint TessLevelInner = 10;
 GLint TessLevelOuter1 = 10;
 GLint TessLevelOuter2 = 10;
 GLint TessLevelOuter3 = 10;
+
+std::vector<int> stoneTessInner;
+std::vector<int> stoneTessOuter1;
+std::vector<int> stoneTessOuter2;
+std::vector<int> stoneTessOuter3;
+
 
 // ------------ DrawPatchModel: modified utility function DrawModel from LittleOBJLoader ---------------
 static void ReportRerror(const char *caller, const char *name)
@@ -151,7 +157,7 @@ void MakeCylinderAlt(int aSlices, float height, float topwidth, float bottomwidt
 
 
 mat4 projectionMatrix;
-mat4 worldToViewMatrix;
+mat4 worldToView;
 mat4 modelToWorldMatrix;
 
 Model *floormodel, *watermodel;
@@ -254,9 +260,119 @@ void MakeLeaves(float sizeLeaf){
 }
 
 
-void Recursion(int depth, float height, float topWidth, float bottomWidth, float angle)
+void Recursion(int depth, float height, float topWidth, float bottomWidth, float angle, int treeType)
 {
     if (depth <= 0){
+        // Base case: Generate leaves
+        gluggPushMatrix();
+        MakeCylinderAlt(20, height, topWidth, bottomWidth);
+        // Move to the tip of the current branch
+        gluggTranslate(0, height, 0);
+
+        // Color leaves green
+        gluggColor(0.0, 255.0, 0.0);
+
+        // Set leaf properties
+        int numLeaves = 10;  // Number of leaves
+        float sizeLeaf = 0.5;  // Size of each leaf
+
+        // Place leaves at the tip of the branch
+        for (int i = 0; i < numLeaves; ++i)
+        {
+            gluggPushMatrix();
+
+            MakeLeaves(sizeLeaf);
+
+            gluggPopMatrix();  // Restore leaf transformation
+        }
+
+
+        gluggPopMatrix();
+
+        return; // Basfall, "avsluta/gå tillbaka"
+    }
+
+    if(treeType == 1){
+        // Skapa första grenen
+    MakeCylinderAlt(20, height, topWidth, bottomWidth);
+
+    // Flytta till toppen av den aktuella grenen
+    gluggTranslate(0, height, 0);
+
+    // Vänster gren
+    gluggPushMatrix(); // Spara nuvarande transformation (undvika att kommade grenar påverkar denna grens transformationer)
+    gluggRotate((rand()%2) - 0.5, (rand()%2) - 0.5, (rand()%2) - 0.5, 1);
+    Recursion(depth - 1 - rand()%2, (height * 0.7), topWidth * 0.7, topWidth, angle,1); // Rekursivt call för nästa djup av grenar
+    gluggPopMatrix(); // Återställ transformationen (undvika att nästa gren inte påverkas av denna grens transformationer)
+
+    // Höger gren
+    gluggPushMatrix(); // Spara nuvarande transformation
+    gluggRotate((rand()%2) - 0.5, (rand()%2) - 0.5, (rand()%2) - 0.5, 1); // Rotera i motsatt riktning
+    Recursion(depth - 1 - rand()%2, (height * 0.7), topWidth * 0.7, topWidth, angle,1); // Rekursivt call för nästa djup av grenar
+    gluggPopMatrix(); // Återställ transformationen
+    }
+
+    else if(treeType == 2){
+            // Skapa första grenen
+    MakeCylinderAlt(20, height, topWidth, bottomWidth);
+
+    // Flytta till toppen av den aktuella grenen
+    gluggTranslate(0, height, 0);
+
+    // Vänster gren
+    gluggPushMatrix(); // Spara nuvarande transformation (undvika att kommade grenar påverkar denna grens transformationer)
+    gluggRotate((rand()%2) - 0.5, (rand()%2) - 0.5, (rand()%2) - 0.5, 1);
+    Recursion(depth - 1 - rand()%2, (height * 0.7) * ((rand()%100)/100.0), topWidth * 0.7, topWidth, angle,1); // Rekursivt call för nästa djup av grenar
+    gluggPopMatrix(); // Återställ transformationen (undvika att nästa gren inte påverkas av denna grens transformationer)
+
+    // Höger gren
+    gluggPushMatrix(); // Spara nuvarande transformation
+    gluggRotate((rand()%2) - 0.5, (rand()%2) - 0.5, (rand()%2) - 0.5, 1); // Rotera i motsatt riktning
+    Recursion(depth - 1 - rand()%2, (height * 0.7) * ((rand()%100)/100.0), topWidth * 0.7, topWidth, angle,1); // Rekursivt call för nästa djup av grenar
+    gluggPopMatrix(); // Återställ transformationen
+
+    }
+    else {
+           // Skapa första grenen
+    MakeCylinderAlt(20, height, topWidth, bottomWidth);
+
+    // Flytta till toppen av den aktuella grenen
+    gluggTranslate(0, height, 0);
+
+    // Vänster gren
+    gluggPushMatrix(); // Spara nuvarande transformation (undvika att kommade grenar påverkar denna grens transformationer)
+    gluggRotate((rand()%2) - 0.5, (rand()%2) - 0.5, (rand()%2) - 0.5, 1);
+    Recursion(depth - 2 - rand()%2, (height * 0.7), topWidth * 0.7, topWidth, angle,3); // Rekursivt call för nästa djup av grenar
+    gluggPopMatrix(); // Återställ transformationen (undvika att nästa gren inte påverkas av denna grens transformationer)
+
+    // Höger gren
+    gluggPushMatrix(); // Spara nuvarande transformation
+    gluggRotate((rand()%2) - 0.5, (rand()%2) - 0.5, (rand()%2) - 0.5, 1); // Rotera i motsatt riktning
+    Recursion(depth - 2 - rand()%2, (height * 0.7), topWidth * 0.7, topWidth, angle,3); // Rekursivt call för nästa djup av grenar
+    gluggPopMatrix(); // Återställ transformationen
+
+        // Vänster gren
+    gluggPushMatrix(); // Spara nuvarande transformation (undvika att kommade grenar påverkar denna grens transformationer)
+    gluggRotate((rand()%2) - 0.5, (rand()%2) - 0.5, (rand()%2) - 0.5, 1);
+    Recursion(depth - 2 - rand()%2, (height * 0.7), topWidth * 0.7, topWidth, angle,3); // Rekursivt call för nästa djup av grenar
+    gluggPopMatrix(); // Återställ transformationen (undvika att nästa gren inte påverkas av denna grens transformationer)
+
+    // Höger gren
+    gluggPushMatrix(); // Spara nuvarande transformation
+    gluggRotate((rand()%2) - 0.5, (rand()%2) - 0.5, (rand()%2) - 0.5, 1); // Rotera i motsatt riktning
+    Recursion(depth - 2 - rand()%2, (height * 0.7), topWidth * 0.7, topWidth, angle,3); // Rekursivt call för nästa djup av grenar
+    gluggPopMatrix(); // Återställ transformationen
+
+    }
+
+
+    // gren
+    /*gluggPushMatrix(); // Spara nuvarande transformation (undvika att kommade grenar påverkar denna grens transformationer)
+    gluggRotate((rand()%2) - 0.25, (rand()%2) - 0.25, (rand()%2) - 0.25, 1);
+    Recursion(depth - 1 - 10*rand()%2, (height * 0.7), topWidth * 0.7, topWidth, angle); // Rekursivt call för nästa djup av grenar
+    gluggPopMatrix(); // Återställ transformationen (undvika att nästa gren inte påverkas av denna grens transformationer)*/
+
+    /*if (depth <= 0){
         // Base case: Generate leaves
         gluggPushMatrix();
 
@@ -333,6 +449,8 @@ void Recursion(int depth, float height, float topWidth, float bottomWidth, float
 
         gluggPopMatrix();
     }*/
+
+
 }
 
 gluggModel MakeTree()
@@ -346,7 +464,7 @@ gluggModel MakeTree()
 	// Between gluggBegin and gluggEnd, call MakeCylinderAlt plus glugg transformations
 	// to create a tree.
 
-    Recursion(10 , 3.0, 0.15, 0.2, 0.15);
+    Recursion(10 , 3.0, 0.15, 0.2, 0.15, rand() % 3);
 
 	//MakeCylinderAlt(20, 2, 0.1, 0.15);
 
@@ -365,7 +483,7 @@ gluggModel MakeBush()
 	// Between gluggBegin and gluggEnd, call MakeCylinderAlt plus glugg transformations
 	// to create a tree.
 
-    Recursion(10 , 2.0/10, 0.15/5, 0.2/5, 0.15);
+    Recursion(10 , 2.0/10, 0.15/5, 0.2/5, 0.15, rand() % 3);
 
 	//MakeCylinderAlt(20, 2, 0.1, 0.15);
 
@@ -481,7 +599,7 @@ Model *MakeStone() {
     return stone;
 }
 
-void generateStones(std::vector<Model*>& stone, std::vector<vec3>& stonePos, std::vector<float>& stoneSize, std::vector<vec3> treePos, std::vector<vec3> bushPos, int amount) {
+void generateStones(std::vector<Model*>& stone, std::vector<vec3>& stonePos, std::vector<vec3>& stoneSize, std::vector<vec3> treePos, std::vector<vec3> bushPos, int amount) {
     int attempts = 0;
     int maxAttempts = amount * 100;
     while(stone.size() < amount && attempts < maxAttempts){
@@ -490,179 +608,9 @@ void generateStones(std::vector<Model*>& stone, std::vector<vec3>& stonePos, std
 
         int x = rand() % kTerrainSize;
         int z = rand() % kTerrainSize;
-        float randomSize = (rand() % 10) * 0.1;
-
-        vec2 coord = vec2(x, z);
-        int ix = z * kTerrainSize + x;
-        if (ix < 0 || ix >= kTerrainSize * kTerrainSize){
-            continue;
-        }
-
-        float stoneHeight = vertices[ix].y + 1.0f;
-        if(stoneHeight < waterHeight){
-            continue;
-        }
-
-        bool collision = false;
-        vec3 currentPos = vec3(x,stoneHeight,z);
-        for(const vec3 treePosition : treePos){
-            if(length(VectorSub(vec2(currentPos.x, currentPos.z),vec2(treePosition.x, treePosition.z))) < 2.0f){
-                collision = true;
-                break;
-            }
-        }
-
-        if(!collision){
-            for(const vec3 bushPosition : bushPos){
-                if(length(VectorSub(vec2(currentPos.x, currentPos.z),vec2(bushPosition.x, bushPosition.z))) < 2.0f){
-                    collision = true;
-                    break;
-                }
-            }
-        }
-        if(!collision){
-            for(const vec3 stonePosition : stonePos){
-                if(length(VectorSub(vec2(currentPos.x, currentPos.z),vec2(stonePosition.x, stonePosition.z))) < 2.0f){
-                    collision = true;
-                    break;
-                }
-            }
-        }
-
-        if (!collision) {
-                stone.push_back(MakeStone());
-                stonePos.push_back(currentPos);
-                stoneSize.push_back(randomSize);
-
-        }
-    }
-}
-
-void buildStone(mat4 worldToViewMatrix, std::vector<Model*>& stone, std::vector<vec3>& stonePos, std::vector<float>& stoneSize, GLuint shader) {
-    mat4 m;
-    for (size_t i = 0; i < stone.size(); ++i) {
-
-        //m = worldToView * T(stonePos[i].x, stonePos[i].y, stonePos[i].z) * S(stoneSize[i], stoneSize[i], stoneSize[i]);;
-        m = worldToViewMatrix * T(stonePos[i].x, 5 + stonePos[i].y, stonePos[i].z) * S(10 * stoneSize[i], 10 * stoneSize[i], 10 * stoneSize[i]);
-
-        // Upload the transformation matrix
-        glUniformMatrix4fv(glGetUniformLocation(shader, "mdlMatrix"), 1, GL_TRUE, m.m);
-
-        // Render the stone
-        //DrawModel(stones[i], shader, "in_Position", "in_Normal", "in_TexCoord");
-         DrawPatchModel(stone[i], shader, "in_Position", "in_Normal", "in_TexCoord");
-
-    }
-}
-
-/*float Noise(float x, float y, float z) {
-    return (sin(x * 12.9898 + y * 78.233 + z * 37.719) * 43758.5453);
-}
-
-// Function to generate smooth noise (Perlin-style)
-float SmoothNoise(vec3 pos) {
-    float noiseValue = Noise(pos.x, pos.y, pos.z);
-    return noiseValue - floor(noiseValue); // Normalize to [0,1]
-}
-
-// Function to perturb a position to create stone-like variation
-vec3 PerturbPosition(vec3 position, float noiseScale, float displacement) {
-    float noise = SmoothNoise(position * noiseScale);
-    float offset = (noise - 0.5f) * displacement; // Center noise around 0
-    return position + normalize(position) * offset;
-}
-
-
-gluggModel MakeStone(float radius = 1.0f, float noiseScale = 5.0f, float displacement = 0.2f) {
-    gluggBegin(GLUGG_TRIANGLES);
-
-    int slices = 40;   // Number of longitudinal segments
-    int stacks = 40;   // Number of latitudinal segments
-
-    for(int stack = 0; stack < stacks; ++stack) {
-        float phi1 = M_PI * (stack / (float)stacks);        // Current stack angle
-        float phi2 = M_PI * ((stack + 1) / (float)stacks);  // Next stack angle
-
-        for(int slice = 0; slice < slices; ++slice) {
-            float theta1 = 2.0 * M_PI * (slice / (float)slices);        // Current slice angle
-            float theta2 = 2.0 * M_PI * ((slice + 1) / (float)slices);  // Next slice angle
-
-            // Four vertices of the current quad
-            vec3 p1 = SetVector(
-                radius * sin(phi1) * cos(theta1),
-                radius * cos(phi1),
-                radius * sin(phi1) * sin(theta1)
-            );
-            vec3 p2 = SetVector(
-                radius * sin(phi2) * cos(theta1),
-                radius * cos(phi2),
-                radius * sin(phi2) * sin(theta1)
-            );
-            vec3 p3 = SetVector(
-                radius * sin(phi2) * cos(theta2),
-                radius * cos(phi2),
-                radius * sin(phi2) * sin(theta2)
-            );
-            vec3 p4 = SetVector(
-                radius * sin(phi1) * cos(theta2),
-                radius * cos(phi1),
-                radius * sin(phi1) * sin(theta2)
-            );
-
-             // Perturb positions for stone-like variation
-            p1 = PerturbPosition(p1, noiseScale, displacement);
-            p2 = PerturbPosition(p2, noiseScale, displacement);
-            p3 = PerturbPosition(p3, noiseScale, displacement);
-            p4 = PerturbPosition(p4, noiseScale, displacement);
-
-
-            // Normals for lighting
-            vec3 n1 = normalize(p1);
-            vec3 n2 = normalize(p2);
-            vec3 n3 = normalize(p3);
-            vec3 n4 = normalize(p4);
-
-            // First triangle of the quad
-            gluggNormalv(n1);
-            gluggTexCoord(stack / (float)stacks, slice / (float)slices);
-            gluggVertexv(p1);
-
-            gluggNormalv(n2);
-            gluggTexCoord((stack + 1) / (float)stacks, slice / (float)slices);
-            gluggVertexv(p2);
-
-            gluggNormalv(n3);
-            gluggTexCoord((stack + 1) / (float)stacks, (slice + 1) / (float)slices);
-            gluggVertexv(p3);
-
-            // Second triangle of the quad
-            gluggNormalv(n1);
-            gluggTexCoord(stack / (float)stacks, slice / (float)slices);
-            gluggVertexv(p1);
-
-            gluggNormalv(n3);
-            gluggTexCoord((stack + 1) / (float)stacks, (slice + 1) / (float)slices);
-            gluggVertexv(p3);
-
-            gluggNormalv(n4);
-            gluggTexCoord(stack / (float)stacks, (slice + 1) / (float)slices);
-            gluggVertexv(p4);
-        }
-    }
-
-    return gluggBuildModel(0);
-}
-
-void generateStones(std::vector<gluggModel>& stone, std::vector<vec3>& stonePos, std::vector<float>& stoneSize, std::vector<vec3> treePos, std::vector<vec3> bushPos, int amount) {
-    int attempts = 0;
-    int maxAttempts = amount * 100;
-    while(stone.size() < amount && attempts < maxAttempts){
-
-        attempts++;
-
-        int x = rand() % kTerrainSize;
-        int z = rand() % kTerrainSize;
-        float randomSize = (rand() % 10) * 0.1;
+        float randomSizeX = (rand() % 4) * 0.5 + 1;
+        float randomSizeY = (rand() % 4) * 0.5 + 1;
+        float randomSizeZ = (rand() % 4) * 0.5 + 1;
 
         vec2 coord = vec2(x, z);
         int ix = z * kTerrainSize + x;
@@ -702,26 +650,48 @@ void generateStones(std::vector<gluggModel>& stone, std::vector<vec3>& stonePos,
         }
 
         if (!collision) {
+                int randomTess = rand() % 5;
                 stone.push_back(MakeStone());
                 stonePos.push_back(currentPos);
-                stoneSize.push_back(randomSize);
-
+                stoneSize.push_back(vec3(randomSizeX, randomSizeY, randomSizeZ));
+                stoneTessInner.push_back(randomTess + 5);
+                stoneTessOuter1.push_back(randomTess + 5);
+                stoneTessOuter2.push_back(randomTess + 5);
+                stoneTessOuter3.push_back(randomTess + 5);
         }
     }
 }
-void buildStone(mat4 worldToView, GLuint texShader, std::vector<gluggModel> stone, std::vector<vec3> stonePos)
-{
+
+void buildStone(mat4 worldToViewMatrix, std::vector<Model*>& stone, std::vector<vec3>& stonePos, std::vector<vec3>& stoneSize, GLuint shader) {
     mat4 m;
-    for(int i = 0; i < stone.size(); i++){
-        m = worldToView * T(stonePos[i].x, stonePos[i].y, stonePos[i].z);
-        glUniformMatrix4fv(glGetUniformLocation(texShader, "modelviewMatrix"), 1, GL_TRUE, m.m);
-        gluggDrawModel(stone[i], texShader);
+    for (size_t i = 0; i < stone.size(); ++i) {
+        int random = rand() % 5;
+        TessLevelInner = 5 + random;
+        TessLevelOuter1 = 5 + random;
+        TessLevelOuter2 = 5 + random;
+        TessLevelOuter3 = 5 + random;
+
+        glUniform1i(glGetUniformLocation(stoneShader, "TessLevelInner"), stoneTessInner[i]);
+        glUniform1i(glGetUniformLocation(stoneShader, "TessLevelOuter1"), stoneTessInner[i]);
+        glUniform1i(glGetUniformLocation(stoneShader, "TessLevelOuter2"), stoneTessInner[i]);
+        glUniform1i(glGetUniformLocation(stoneShader, "TessLevelOuter3"), stoneTessInner[i]);
+
+        //m = worldToView * T(stonePos[i].x, stonePos[i].y, stonePos[i].z) * S(stoneSize[i], stoneSize[i], stoneSize[i]);;
+        m = worldToViewMatrix * T(stonePos[i].x, stonePos[i].y, stonePos[i].z) * S(stoneSize[i].x, stoneSize[i].y, stoneSize[i].z);
+
+        // Upload the transformation matrix
+        glUniformMatrix4fv(glGetUniformLocation(shader, "camMatrix"), 1, GL_TRUE, m.m);
+
+        // Render the stone
+        //DrawModel(stones[i], shader, "in_Position", "in_Normal", "in_TexCoord");
+         DrawPatchModel(stone[i], shader, "in_Position", "in_Normal", "in_TexCoord");
+
     }
-}*/
+}
 
 
 // Add random perturbation for a less spherical shape
-vec3 perturb(vec3 p, float intensity) {
+/*vec3 perturb(vec3 p, float intensity) {
     float offset = (static_cast<float>(rand()) / RAND_MAX - 0.5f) * intensity;
     return p + SetVector(offset, offset, offset);
 }
@@ -930,7 +900,7 @@ gluggModel buildStoneModel(const std::vector<vec3>& vertices) {
 
     return gluggBuildModel(0);
 }
-
+*/
 
 std::vector<gluggModel> tree;
 std::vector<vec3> treePos;
@@ -941,7 +911,8 @@ gluggModel roadModel;
 std::vector<vec3> roadVertices;
 std::vector<Model *> stone;
 std::vector<vec3> stonePos;
-std::vector<float> stoneSize;
+std::vector<vec3> stoneSize;
+
 
 float fract(float x){
     return x - floor(x);
@@ -1324,7 +1295,7 @@ void init(void)
 
 
 	projectionMatrix = frustum(-0.1, 0.1, -0.1, 0.1, 0.2, 300.0);
-	worldToViewMatrix = lookAt(0, 0, 3, 0,0,0, 0,1,0);
+	mat4 worldToViewMatrix = lookAt(0, 0, 3, 0,0,0, 0,1,0);
 	modelToWorldMatrix = IdentityMatrix();
 
 	// Load and compile shader
@@ -1361,9 +1332,10 @@ void init(void)
 
     // Upload matrices that we do not intend to change.
     glUseProgram(stoneShader);
-    generateStones(stone, stonePos, stoneSize ,treePos, bushPos, 5);
-	glUniformMatrix4fv(glGetUniformLocation(stoneShader, "camMatrix"), 1, GL_TRUE, modelToWorldMatrix.m);
+    generateStones(stone, stonePos, stoneSize ,treePos, bushPos, 100);
+	glUniformMatrix4fv(glGetUniformLocation(stoneShader, "camMatrix"), 1, GL_TRUE, worldToViewMatrix.m);
 	glUniformMatrix4fv(glGetUniformLocation(stoneShader, "projMatrix"), 1, GL_TRUE, projectionMatrix.m);
+	glUniformMatrix4fv(glGetUniformLocation(stoneShader, "mdlMatrix"), 1, GL_TRUE, IdentityMatrix().m);
 
 
 // Important! The shader we upload to must be active!
@@ -1387,16 +1359,6 @@ void init(void)
 
     generateTrees(tree, treePos, 100);
     generateBush(bush, bushPos, treePos, 100);
-    //generateStones(stone, stonePos, stoneSize, treePos, bushPos, 2);
-    //stoneModel = MakeRealisticStone(10, 1.0f, 0.2f); // Higher tessLevel for smoother stones
-    float baseSize = 1.0f;
-    float perturbStrength = 0.3f;
-
-    // Generate vertices for the stone
-    auto stoneVertices = generateStone(10, baseSize, perturbStrength);
-
-    // Build GLUGG stone model
-    gluggModel stoneModel = buildStoneModel(stoneVertices);
 
 	//tree = MakeTree();
 	//tree1 = MakeTree();
@@ -1410,14 +1372,6 @@ GLfloat a = 0.0;
 vec3 campos = vec3(kTerrainSize*kPolySize/4, 1.5, kTerrainSize*kPolySize/4);
 vec3 forward = vec3(0, 0, -4);
 vec3 up = vec3(0, 1, 0);
-
-/*mat4 buildTree(vec3 position, mat4& worldToView, mat4& m , int treenum){
-
-    m = worldToView * T(position.x,position.y,position.z);
-    glUniformMatrix4fv(glGetUniformLocation(texShader, "modelviewMatrix"), 1, GL_TRUE, m.m);
-	gluggDrawModel(tree[treenum], texShader);
-	return m;
-}*/
 
 
 void display(void)
@@ -1480,7 +1434,7 @@ void display(void)
 	m = worldToView;
 	glUniformMatrix4fv(glGetUniformLocation(texShader, "modelviewMatrix"), 1, GL_TRUE, m.m);
 	glUseProgram(stoneShader);
-	//glUniformMatrix4fv(glGetUniformLocation(stoneShader, "camMatrix"), 1, GL_TRUE, m.m);
+
 	DrawModel(floormodel, texShader, "inPosition", "inNormal", "inTexCoord");
 
     glBindTexture(GL_TEXTURE_2D, watertex);
@@ -1495,7 +1449,8 @@ void display(void)
     buildTrees(worldToView, texShader, tree, treePos);
     buildBush(worldToView, texShader, bush, bushPos);
 
-    buildStone(m, stone, stonePos, stoneSize, stoneShader);
+    glUseProgram(stoneShader);
+    buildStone(worldToView, stone, stonePos, stoneSize, stoneShader);
 
     buildRoad(roadModel, worldToView);
 

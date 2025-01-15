@@ -72,6 +72,23 @@ float noise(vec3 st)
 
           	);
 }
+float smoothVoronoi(vec3 x) {
+    vec3 p = floor(x);   // Cell origin
+    vec3 f = fract(x);   // Fractional part
+
+    float res = 0.0;
+    for (int k = -1; k <= 1; k++) {
+        for (int j = -1; j <= 1; j++) {
+            for (int i = -1; i <= 1; i++) {
+                vec3 b = vec3(i, j, k);           // Neighbor offset
+                vec3 r = (b - f) + random3(p + b); // Relative position
+                float d = length(r);             // Distance
+                res += exp2(-16.0 * d);          // Exponential smoothing
+            }
+        }
+    }
+    return -log2(res); // Normalize result
+}
 
 float fbm(vec3 pos, float scale){
     float t = 0.0;
@@ -81,7 +98,7 @@ float fbm(vec3 pos, float scale){
 
     int numOctaves = 8;
     for(int i = 0; i < numOctaves; i++){
-        t += a * noise(pos * f);
+        t += a * smoothVoronoi(pos * f);
         f *= 2.0;
         a*= G;
     }
