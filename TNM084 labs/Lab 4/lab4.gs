@@ -83,11 +83,11 @@ float smoothVoronoi(vec3 x) {
                 vec3 b = vec3(i, j, k);           // Neighbor offset
                 vec3 r = (b - f) + random3(p + b); // Relative position
                 float d = length(r);             // Distance
-                res += exp2(-16.0 * d);          // Exponential smoothing
+                res += exp2(-32.0 * d);          // Exponential smoothing
             }
         }
     }
-    return -log2(res); // Normalize result
+    return -(1.0/32.0)*log2( res );
 }
 
 float fbm(vec3 pos, float scale){

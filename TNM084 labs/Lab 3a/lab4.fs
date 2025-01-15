@@ -11,6 +11,6 @@ void main(void)
 	//out_Color = vec4(gsNormal.x, gsNormal.y, gsNormal.z, 1.0);
 	out_Color = vec4(shade, shade, shade, 1.0);
 
-	//fragColor = vec4(1.0, 0.0, 0.0, 1.0); // Bright red
+	//out_Color = vec4(0.5, 0.5, 0.5, 1.0); // Bright red
 }
 

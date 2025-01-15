@@ -71,6 +71,24 @@ float noise(vec3 st)
           	);
 }
 
+float smoothVoronoi(vec3 x) {
+    vec3 p = floor(x);   // Cell origin
+    vec3 f = fract(x);   // Fractional part
+
+    float res = 0.0;
+    for (int k = -1; k <= 1; k++) {
+        for (int j = -1; j <= 1; j++) {
+            for (int i = -1; i <= 1; i++) {
+                vec3 b = vec3(i, j, k);           // Neighbor offset
+                vec3 r = (b - f) + random3(p + b); // Relative position
+                float d = length(r);             // Distance
+                res += exp2(-16.0 * d);          // Exponential smoothing
+            }
+        }
+    }
+    return -log2(res); // Normalize result
+}
+
 float fbm(vec3 pos, float scale){
     float t = 0.0;
     float G = exp(-scale);
@@ -79,13 +97,12 @@ float fbm(vec3 pos, float scale){
 
     int numOctaves = 8;
     for(int i = 0; i < numOctaves; i++){
-        t += a * noise(pos * f);
+        t += a * smoothVoronoi(pos * f) * 0.3;
         f *= 2.0;
         a*= G;
     }
     return t;
 }
-
 void computeVertex(int nr)
 {
 	vec3 p, v1, v2, v3, p1, p2, p3, s1, s2, n;
@@ -94,7 +111,7 @@ void computeVertex(int nr)
 	// Add interesting code here
 
 	vec3 dir = p - vec3(0,0,0);
-	vec3 normvec = normalize(dir);
+	vec3 normvec = normalize(dir) * 0.8;
 
 
 	//vec3 punkt1 = vec3(1,1,0);
@@ -129,7 +146,7 @@ void computeVertex(int nr)
 
 	//p = p + noise(p*4)/9;
 
-	p = p + p * fbm(normvec ,0.5) * 0.8;
+	p = p + p * fbm(normvec ,1) * 0.3;
 
 	ortpunkt1 = ortpunkt1 + ortpunkt1 * fbm(ortpunkt1,0.5)/4;
 	ortpunkt2 = ortpunkt2 + ortpunkt2 * fbm(ortpunkt2,0.5)/4;
@@ -145,7 +162,7 @@ void computeVertex(int nr)
     gsTexCoord = teTexCoord[0];
 
 	n = teNormal[nr]; // This is not the normal you are looking for. Move along!
-    gsNormal = mat3(camMatrix * mdlMatrix) * normal;
+    gsNormal = mat3(mdlMatrix) * normal;
 
     //gsNormal = normal;
 

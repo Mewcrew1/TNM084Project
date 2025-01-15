@@ -244,7 +244,7 @@ void MakeLeaves(float sizeLeaf){
 
     vec3 v1 = SetVector(-sizeLeaf / 2 - randomSize, 0, 0);
     vec3 v2 = SetVector(sizeLeaf / 2 + randomSize, 0, 0);
-    vec3 v3 = SetVector(0, sizeLeaf / 2, 0);
+    vec3 v3 = SetVector(0, sizeLeaf / 2 + randomSize, 0);
 
     vec3 normal = cross(v2 - v1, v3 - v1);
     normal = normalize(normal);
@@ -464,7 +464,7 @@ gluggModel MakeTree()
 	// Between gluggBegin and gluggEnd, call MakeCylinderAlt plus glugg transformations
 	// to create a tree.
 
-    Recursion(10 , 3.0, 0.15, 0.2, 0.15, rand() % 3);
+    Recursion(15 , 3.0, 0.15, 0.2, 0.15, rand() % 3);
 
 	//MakeCylinderAlt(20, 2, 0.1, 0.15);
 
@@ -483,7 +483,7 @@ gluggModel MakeBush()
 	// Between gluggBegin and gluggEnd, call MakeCylinderAlt plus glugg transformations
 	// to create a tree.
 
-    Recursion(10 , 2.0/10, 0.15/5, 0.2/5, 0.15, rand() % 3);
+    Recursion(10 , 2.0/10 + (rand() % 2) * 2.0/10, 0.15/5, 0.2/5, 0.15, rand() % 3);
 
 	//MakeCylinderAlt(20, 2, 0.1, 0.15);
 
@@ -608,9 +608,9 @@ void generateStones(std::vector<Model*>& stone, std::vector<vec3>& stonePos, std
 
         int x = rand() % kTerrainSize;
         int z = rand() % kTerrainSize;
-        float randomSizeX = (rand() % 4) * 0.5 + 1;
-        float randomSizeY = (rand() % 4) * 0.5 + 1;
-        float randomSizeZ = (rand() % 4) * 0.5 + 1;
+        float randomSizeX = ((rand() % 4) * 0.5 + 1)*0.5;
+        float randomSizeY = ((rand() % 3) * 0.5 + 1)*0.3;
+        float randomSizeZ = ((rand() % 4) * 0.5 + 1)*0.5;
 
         vec2 coord = vec2(x, z);
         int ix = z * kTerrainSize + x;
@@ -626,7 +626,7 @@ void generateStones(std::vector<Model*>& stone, std::vector<vec3>& stonePos, std
         bool collision = false;
         vec3 currentPos = vec3(x,stoneHeight,z);
         for(const vec3 treePosition : treePos){
-            if(length(VectorSub(vec2(currentPos.x, currentPos.z),vec2(treePosition.x, treePosition.z))) < 2.0f){
+            if(length(VectorSub(vec2(currentPos.x, currentPos.z),vec2(treePosition.x, treePosition.z))) < 3.0f){
                 collision = true;
                 break;
             }
@@ -634,7 +634,7 @@ void generateStones(std::vector<Model*>& stone, std::vector<vec3>& stonePos, std
 
         if(!collision){
             for(const vec3 bushPosition : bushPos){
-                if(length(VectorSub(vec2(currentPos.x, currentPos.z),vec2(bushPosition.x, bushPosition.z))) < 2.0f){
+                if(length(VectorSub(vec2(currentPos.x, currentPos.z),vec2(bushPosition.x, bushPosition.z))) < 3.0f){
                     collision = true;
                     break;
                 }
@@ -642,7 +642,7 @@ void generateStones(std::vector<Model*>& stone, std::vector<vec3>& stonePos, std
         }
         if(!collision){
             for(const vec3 stonePosition : stonePos){
-                if(length(VectorSub(vec2(currentPos.x, currentPos.z),vec2(stonePosition.x, stonePosition.z))) < 2.0f){
+                if(length(VectorSub(vec2(currentPos.x, currentPos.z),vec2(stonePosition.x, stonePosition.z))) < 1.0f){
                     collision = true;
                     break;
                 }
@@ -650,14 +650,14 @@ void generateStones(std::vector<Model*>& stone, std::vector<vec3>& stonePos, std
         }
 
         if (!collision) {
-                int randomTess = rand() % 5;
+                int randomTess = rand() % 10;
                 stone.push_back(MakeStone());
                 stonePos.push_back(currentPos);
                 stoneSize.push_back(vec3(randomSizeX, randomSizeY, randomSizeZ));
-                stoneTessInner.push_back(randomTess + 5);
-                stoneTessOuter1.push_back(randomTess + 5);
-                stoneTessOuter2.push_back(randomTess + 5);
-                stoneTessOuter3.push_back(randomTess + 5);
+                stoneTessInner.push_back(5 + randomTess);
+                stoneTessOuter1.push_back(5 + randomTess);
+                stoneTessOuter2.push_back(5 + randomTess);
+                stoneTessOuter3.push_back(5 + randomTess);
         }
     }
 }
@@ -1273,10 +1273,6 @@ void reshape(int w, int h)
 	glUniformMatrix4fv(glGetUniformLocation(texShader, "projectionMatrix"), 1, GL_TRUE, projectionMatrix.m);
 	glUseProgram(stoneShader);
 	glUniformMatrix4fv(glGetUniformLocation(stoneShader, "projMatrix"), 1, GL_TRUE, projectionMatrix.m);
-	glUniform1i(glGetUniformLocation(stoneShader, "TessLevelInner"), TessLevelInner);
-	glUniform1i(glGetUniformLocation(stoneShader, "TessLevelOuter1"), TessLevelOuter1);
-	glUniform1i(glGetUniformLocation(stoneShader, "TessLevelOuter2"), TessLevelOuter2);
-	glUniform1i(glGetUniformLocation(stoneShader, "TessLevelOuter3"), TessLevelOuter3);
 }
 
 gluggModel stoneModel;
@@ -1305,12 +1301,6 @@ void init(void)
                                 "lab4.tcs", "lab4.tes");
 
     printError("init shader");
-
-
-    glUniform1i(glGetUniformLocation(stoneShader, "TessLevelInner"), TessLevelInner);
-    glUniform1i(glGetUniformLocation(stoneShader, "TessLevelOuter1"), TessLevelOuter1);
-    glUniform1i(glGetUniformLocation(stoneShader, "TessLevelOuter2"), TessLevelOuter2);
-    glUniform1i(glGetUniformLocation(stoneShader, "TessLevelOuter3"), TessLevelOuter3);
 
 	// Upload geometry to the GPU:
 	//OLD
@@ -1357,8 +1347,8 @@ void init(void)
 
 	LoadTGATextureSimple("ivyleaf.tga", &leaftex);
 
-    generateTrees(tree, treePos, 100);
-    generateBush(bush, bushPos, treePos, 100);
+    generateTrees(tree, treePos, 5);
+    generateBush(bush, bushPos, treePos, 5);
 
 	//tree = MakeTree();
 	//tree1 = MakeTree();
