@@ -16,6 +16,9 @@ uniform mat4 camMatrix;
 
 uniform float disp;
 uniform int texon;
+uniform int SphereMaterial;
+uniform float stoneID;
+uniform float cloudID;
 
 vec2 random2(vec2 st)
 {
@@ -82,22 +85,38 @@ float smoothVoronoi(vec3 x) {
                 vec3 b = vec3(i, j, k);           // Neighbor offset
                 vec3 r = (b - f) + random3(p + b); // Relative position
                 float d = length(r);             // Distance
-                res += exp2(-16.0 * d);          // Exponential smoothing
+                res += exp2(-32.0 * d);          // Exponential smoothing
             }
         }
     }
-    return -log2(res); // Normalize result
+    return -(1.0/32.0)*log2( res ); // Normalize result
 }
 
-float fbm(vec3 pos, float scale){
+float fbm(vec3 pos, float scale, float stoneID){
     float t = 0.0;
     float G = exp(-scale);
     float f = 1.0;
     float a = 1.0;
+    int round = int(floor(4.0 * stoneID));
 
-    int numOctaves = 8;
+    int numOctaves = 4 + round;
     for(int i = 0; i < numOctaves; i++){
-        t += a * smoothVoronoi(pos * f) * 0.3;
+        t += a * smoothVoronoi(pos * f);
+        f *= 1.5;
+        a*= G;
+    }
+    return t;
+}
+
+float fbmNoise(vec3 pos, float scale, float cloudID){
+    float t = 0.0;
+    float G = 0.5;
+    float f = 1.0;
+    float a = 1.0;
+    int round = int(floor(3.0 * cloudID));
+    int numOctaves = 3 + round;
+    for(int i = 0; i < numOctaves; i++){
+        t += a * noise(pos * f);
         f *= 2.0;
         a*= G;
     }
@@ -112,20 +131,6 @@ void computeVertex(int nr)
 
 	vec3 dir = p - vec3(0,0,0);
 	vec3 normvec = normalize(dir) * 0.8;
-
-
-	//vec3 punkt1 = vec3(1,1,0);
-	//vec3 punkt2 = vec3(1,0,1);
-	//vec3 punkt3 = vec3(0,1,1);
-	//punkt1 = normvec + punkt1;
-	//punkt2 = normvec + punkt2;
-	//punkt3 = normvec + punkt3;
-	//punkt1 = normalize(punkt1);
-    //punkt2 = normalize(punkt2);
-    //punkt3 = normalize(punkt3);
-	//vec3 punktvec1 = punkt2 - punkt1;
-	//vec3 punktvec2 = punkt3 - punkt2;
-	//vec3 normal = cross(punktvec2,punktvec1);
 
 	vec3 ortvec1 = cross(normvec, vec3(1,0,0));
 	vec3 ortvec2 = cross(normvec, ortvec1);
@@ -146,11 +151,31 @@ void computeVertex(int nr)
 
 	//p = p + noise(p*4)/9;
 
-	p = p + p * fbm(normvec ,1) * 0.3;
 
-	ortpunkt1 = ortpunkt1 + ortpunkt1 * fbm(ortpunkt1,0.5)/4;
-	ortpunkt2 = ortpunkt2 + ortpunkt2 * fbm(ortpunkt2,0.5)/4;
-	ortpunkt3 = ortpunkt3 + ortpunkt3 * fbm(ortpunkt3,0.5)/4;
+    if(SphereMaterial == 0){
+        float scale = 0.2 + 0.8 * stoneID;
+        p = p + p * fbm(p ,scale, stoneID) / 1.5;
+        //p = p + p * fbm(p, 1) * 3;
+        int round = int(floor(4.0 * stoneID));
+        int numOctaves = 4 + round;
+        ortpunkt1 = ortpunkt1 + ortpunkt1 * fbm(ortpunkt1,scale, stoneID)/numOctaves;
+        ortpunkt2 = ortpunkt2 + ortpunkt2 * fbm(ortpunkt2,scale, stoneID)/numOctaves;
+        ortpunkt3 = ortpunkt3 + ortpunkt3 * fbm(ortpunkt3,scale, stoneID)/numOctaves;
+
+
+	}
+
+	else{
+        float scale = 0.3 + 0.6*cloudID;
+        p = p + p * fbmNoise(normvec , scale, cloudID);
+        int round = int(floor(3.0 * cloudID));
+        int numOctaves = 3 + round;
+        ortpunkt1 = ortpunkt1 + ortpunkt1 * fbm(ortpunkt1,scale, cloudID)/numOctaves;
+        ortpunkt2 = ortpunkt2 + ortpunkt2 * fbm(ortpunkt2,scale, cloudID)/numOctaves;
+        ortpunkt3 = ortpunkt3 + ortpunkt3 * fbm(ortpunkt3,scale, cloudID)/numOctaves;
+	}
+
+
     vec3 ortpunktvec1 = ortpunkt2 - ortpunkt1;
 	vec3 ortpunktvec2 = ortpunkt3 - ortpunkt2;
 	vec3 normal = cross(ortpunktvec1,ortpunktvec2);

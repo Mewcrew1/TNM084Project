@@ -36,6 +36,11 @@ std::vector<int> stoneTessOuter1;
 std::vector<int> stoneTessOuter2;
 std::vector<int> stoneTessOuter3;
 
+std::vector<int> cloudTessInner;
+std::vector<int> cloudTessOuter1;
+std::vector<int> cloudTessOuter2;
+std::vector<int> cloudTessOuter3;
+
 
 // ------------ DrawPatchModel: modified utility function DrawModel from LittleOBJLoader ---------------
 static void ReportRerror(const char *caller, const char *name)
@@ -161,7 +166,7 @@ mat4 worldToView;
 mat4 modelToWorldMatrix;
 
 Model *floormodel, *watermodel;
-GLuint grasstex, barktex, leaftex,watertex;
+GLuint grasstex, barktex, leaftex,watertex, stonetex, bark4tex, bjorktex;
 
 // Reference to shader programs
 GLuint phongShader, texShader, stoneShader;
@@ -232,6 +237,7 @@ float length(vec2 a){
  result = a.x*a.x + a.y*a.y;
  return result;
 }
+
 void MakeLeaves(float sizeLeaf){
     float randomSize = ((rand() / (float)RAND_MAX)) * 0.2;
     float xOffset = ((rand() / (float)RAND_MAX) - 0.5) * 0.3; // Smaller range
@@ -453,7 +459,7 @@ void Recursion(int depth, float height, float topWidth, float bottomWidth, float
 
 }
 
-gluggModel MakeTree()
+gluggModel MakeTree(std::vector<int>& treeType)
 {
 	gluggSetPositionName("inPosition");
 	gluggSetNormalName("inNormal");
@@ -463,8 +469,10 @@ gluggModel MakeTree()
 
 	// Between gluggBegin and gluggEnd, call MakeCylinderAlt plus glugg transformations
 	// to create a tree.
+    int typeTree = rand() % 3;
 
-    Recursion(15 , 3.0, 0.15, 0.2, 0.15, rand() % 3);
+    Recursion(10, 2.0, 0.15, 0.2, 0.15, typeTree);
+    treeType.push_back(typeTree);
 
 	//MakeCylinderAlt(20, 2, 0.1, 0.15);
 
@@ -472,7 +480,7 @@ gluggModel MakeTree()
 }
 
 
-gluggModel MakeBush()
+gluggModel MakeBush(std::vector<int>& bushType)
 {
 	gluggSetPositionName("inPosition");
 	gluggSetNormalName("inNormal");
@@ -482,15 +490,17 @@ gluggModel MakeBush()
 
 	// Between gluggBegin and gluggEnd, call MakeCylinderAlt plus glugg transformations
 	// to create a tree.
+    int typeBush = rand() % 3;
+    Recursion(10 , 2.0/10 + 1.0/10 * (rand() % 3) , 0.15/5, 0.2/5 + 0.1/5 * (rand() % 3), 0.15, typeBush);
+    bushType.push_back(typeBush);
 
-    Recursion(10 , 2.0/10 + (rand() % 2) * 2.0/10, 0.15/5, 0.2/5, 0.15, rand() % 3);
 
 	//MakeCylinderAlt(20, 2, 0.1, 0.15);
 
 	return gluggBuildModel(0);
 }
 
-void generateTrees(std::vector<gluggModel>& tree, std::vector<vec3>& treePos, int amount){
+void generateTrees(std::vector<gluggModel>& tree, std::vector<vec3>& treePos, std::vector<int>& treeType, int amount){
     int attempts = 0;
     int maxAttempts = amount * 100;
     while(tree.size() < amount && attempts < maxAttempts){
@@ -520,13 +530,15 @@ void generateTrees(std::vector<gluggModel>& tree, std::vector<vec3>& treePos, in
         }
 
         if (!collision) {
-            tree.push_back(MakeTree());
+            tree.push_back(MakeTree(treeType));
             treePos.push_back(currentTreePos);
         }
     }
+
+    std::cout << "Amount of trees: " << tree.size();
 }
 
-void generateBush(std::vector<gluggModel>& bush, std::vector<vec3>& bushPos, const std::vector<vec3> treePos, int amount){
+void generateBush(std::vector<gluggModel>& bush, std::vector<vec3>& bushPos, const std::vector<vec3> treePos, std::vector<int>& bushType, int amount){
     int attempts = 0;
     int maxAttempts = amount * 100;
     while(bush.size() < amount && attempts < maxAttempts){
@@ -566,30 +578,49 @@ void generateBush(std::vector<gluggModel>& bush, std::vector<vec3>& bushPos, con
         }
 
         if (!collision) {
-            bush.push_back(MakeBush());
+            bush.push_back(MakeBush(bushType));
             bushPos.push_back(currentPos);
         }
     }
 
-    std::cout << bush.size();
+    std::cout << "Amount of bushes: " << bush.size();
 }
 
-void buildTrees(mat4 worldToView, GLuint texShader, std::vector<gluggModel> tree, std::vector<vec3> treePos)
+void buildTrees(mat4 worldToView, GLuint texShader, std::vector<gluggModel> tree, std::vector<vec3> treePos, std::vector<int>& treeType)
 {
     mat4 m;
     for(int i = 0; i < tree.size(); i++){
         m = worldToView * T(treePos[i].x, treePos[i].y, treePos[i].z);
         glUniformMatrix4fv(glGetUniformLocation(texShader, "modelviewMatrix"), 1, GL_TRUE, m.m);
+         if(treeType[i] == 0){
+            glBindTexture(GL_TEXTURE_2D, barktex);
+        }
+        else if(treeType[i] == 1){
+            glBindTexture(GL_TEXTURE_2D, bark4tex);
+        }
+        else{
+            glBindTexture(GL_TEXTURE_2D, bjorktex);
+        }
         gluggDrawModel(tree[i], texShader);
     }
 }
 
-void buildBush(mat4 worldToView, GLuint texShader, std::vector<gluggModel> bush, std::vector<vec3> bushPos)
+void buildBush(mat4 worldToView, GLuint texShader, std::vector<gluggModel> bush, std::vector<vec3> bushPos, std::vector<int>& bushType)
 {
     mat4 m;
     for(int i = 0; i < bush.size(); i++){
         m = worldToView * T(bushPos[i].x, bushPos[i].y, bushPos[i].z);
         glUniformMatrix4fv(glGetUniformLocation(texShader, "modelviewMatrix"), 1, GL_TRUE, m.m);
+
+        if(bushType[i] == 0){
+            glBindTexture(GL_TEXTURE_2D, barktex);
+        }
+        else if(bushType[i] == 1){
+            glBindTexture(GL_TEXTURE_2D, bark4tex);
+        }
+        else{
+            glBindTexture(GL_TEXTURE_2D, bjorktex);
+        }
         gluggDrawModel(bush[i], texShader);
     }
 }
@@ -599,7 +630,7 @@ Model *MakeStone() {
     return stone;
 }
 
-void generateStones(std::vector<Model*>& stone, std::vector<vec3>& stonePos, std::vector<vec3>& stoneSize, std::vector<vec3> treePos, std::vector<vec3> bushPos, int amount) {
+void generateStones(std::vector<Model*>& stone, std::vector<vec3>& stonePos, std::vector<vec3>& stoneSize, std::vector<vec3> treePos, std::vector<vec3> bushPos, std::vector<float>& randStone, int amount) {
     int attempts = 0;
     int maxAttempts = amount * 100;
     while(stone.size() < amount && attempts < maxAttempts){
@@ -608,9 +639,9 @@ void generateStones(std::vector<Model*>& stone, std::vector<vec3>& stonePos, std
 
         int x = rand() % kTerrainSize;
         int z = rand() % kTerrainSize;
-        float randomSizeX = ((rand() % 4) * 0.5 + 1)*0.5;
-        float randomSizeY = ((rand() % 3) * 0.5 + 1)*0.3;
-        float randomSizeZ = ((rand() % 4) * 0.5 + 1)*0.5;
+        float randomSizeX = ((rand() % 5) * 0.5 + 1)*0.6;
+        float randomSizeY = ((rand() % 3) * 0.5 + 1)*0.4;
+        float randomSizeZ = ((rand() % 5) * 0.5 + 1)*0.6;
 
         vec2 coord = vec2(x, z);
         int ix = z * kTerrainSize + x;
@@ -651,30 +682,30 @@ void generateStones(std::vector<Model*>& stone, std::vector<vec3>& stonePos, std
 
         if (!collision) {
                 int randomTess = rand() % 10;
+                float randomShader = rand() / RAND_MAX;
                 stone.push_back(MakeStone());
                 stonePos.push_back(currentPos);
                 stoneSize.push_back(vec3(randomSizeX, randomSizeY, randomSizeZ));
-                stoneTessInner.push_back(5 + randomTess);
-                stoneTessOuter1.push_back(5 + randomTess);
-                stoneTessOuter2.push_back(5 + randomTess);
-                stoneTessOuter3.push_back(5 + randomTess);
+                stoneTessInner.push_back(10 + randomTess);
+                stoneTessOuter1.push_back(10 + randomTess);
+                stoneTessOuter2.push_back(10 + randomTess);
+                stoneTessOuter3.push_back(10 + randomTess);
+                randStone.push_back(randomShader);
         }
     }
+    std::cout << "Amount of stones: " << stone.size();
 }
 
-void buildStone(mat4 worldToViewMatrix, std::vector<Model*>& stone, std::vector<vec3>& stonePos, std::vector<vec3>& stoneSize, GLuint shader) {
+void buildStone(mat4 worldToViewMatrix, std::vector<Model*>& stone, std::vector<vec3>& stonePos, std::vector<vec3>& stoneSize, std::vector<float>& randStone, GLuint shader) {
     mat4 m;
     for (size_t i = 0; i < stone.size(); ++i) {
         int random = rand() % 5;
-        TessLevelInner = 5 + random;
-        TessLevelOuter1 = 5 + random;
-        TessLevelOuter2 = 5 + random;
-        TessLevelOuter3 = 5 + random;
-
         glUniform1i(glGetUniformLocation(stoneShader, "TessLevelInner"), stoneTessInner[i]);
         glUniform1i(glGetUniformLocation(stoneShader, "TessLevelOuter1"), stoneTessInner[i]);
         glUniform1i(glGetUniformLocation(stoneShader, "TessLevelOuter2"), stoneTessInner[i]);
         glUniform1i(glGetUniformLocation(stoneShader, "TessLevelOuter3"), stoneTessInner[i]);
+        glUniform1i(glGetUniformLocation(stoneShader, "SphereMaterial"), 0);
+        glUniform1f(glGetUniformLocation(stoneShader, "stoneID"), randStone[i]);
 
         //m = worldToView * T(stonePos[i].x, stonePos[i].y, stonePos[i].z) * S(stoneSize[i], stoneSize[i], stoneSize[i]);;
         m = worldToViewMatrix * T(stonePos[i].x, stonePos[i].y, stonePos[i].z) * S(stoneSize[i].x, stoneSize[i].y, stoneSize[i].z);
@@ -682,9 +713,81 @@ void buildStone(mat4 worldToViewMatrix, std::vector<Model*>& stone, std::vector<
         // Upload the transformation matrix
         glUniformMatrix4fv(glGetUniformLocation(shader, "camMatrix"), 1, GL_TRUE, m.m);
 
+
+        glBindTexture(GL_TEXTURE_2D, stonetex);
         // Render the stone
         //DrawModel(stones[i], shader, "in_Position", "in_Normal", "in_TexCoord");
          DrawPatchModel(stone[i], shader, "in_Position", "in_Normal", "in_TexCoord");
+
+    }
+}
+
+void generateClouds(std::vector<Model*>& cloud, std::vector<vec3>& cloudPos, std::vector<vec3>& cloudSize,std::vector<float>& randCloud, int amount) {
+    int attempts = 0;
+    int maxAttempts = amount * 100;
+    while(cloud.size() < amount && attempts < maxAttempts){
+
+        attempts++;
+
+        int x = rand() % kTerrainSize;
+        int z = rand() % kTerrainSize;
+        float randomSizeX = ((rand() % 5) * 0.5 + 4);
+        float randomSizeY = ((rand() % 2) * 0.5 + 3);
+        float randomSizeZ = ((rand() % 7) * 0.5 + 4);
+
+        vec2 coord = vec2(x, z);
+        int ix = z * kTerrainSize + x;
+        if (ix < 0 || ix >= kTerrainSize * kTerrainSize){
+            continue;
+        }
+
+        float cloudHeight = 15 + 2 * rand() % 5;
+
+        bool collision = false;
+        vec3 currentPos = vec3(x,cloudHeight,z);
+        for(const vec3 cloudPosition : cloudPos){
+            if(length(VectorSub(vec2(currentPos.x, currentPos.z),vec2(cloudPosition.x, cloudPosition.z))) < 3.0f){
+                collision = true;
+                break;
+            }
+        }
+
+        if (!collision) {
+                int randomTess = rand() % 10;
+                float randomShader = rand() / RAND_MAX;
+                cloud.push_back(MakeStone());
+                cloudPos.push_back(currentPos);
+                cloudSize.push_back(vec3(randomSizeX, randomSizeY, randomSizeZ));
+                cloudTessInner.push_back(10 + randomTess);
+                cloudTessOuter1.push_back(10 + randomTess);
+                cloudTessOuter2.push_back(10 + randomTess);
+                cloudTessOuter3.push_back(10 + randomTess);
+                randCloud.push_back(randomShader);
+        }
+    }
+    std::cout << "Amount of clouds: " << cloud.size();
+}
+
+void buildCloud(mat4 worldToViewMatrix, std::vector<Model*>& cloud, std::vector<vec3>& cloudPos, std::vector<vec3>& cloudSize, std::vector<float>& randCloud, GLuint shader) {
+    mat4 m;
+    for (size_t i = 0; i < cloud.size(); ++i) {
+
+        glUniform1i(glGetUniformLocation(stoneShader, "TessLevelInner"), cloudTessInner[i]);
+        glUniform1i(glGetUniformLocation(stoneShader, "TessLevelOuter1"), cloudTessInner[i]);
+        glUniform1i(glGetUniformLocation(stoneShader, "TessLevelOuter2"), cloudTessInner[i]);
+        glUniform1i(glGetUniformLocation(stoneShader, "TessLevelOuter3"), cloudTessInner[i]);
+        glUniform1i(glGetUniformLocation(stoneShader, "SphereMaterial"), 1);
+        glUniform1f(glGetUniformLocation(stoneShader, "cloudID"), randCloud[i]);
+
+        //m = worldToView * T(stonePos[i].x, stonePos[i].y, stonePos[i].z) * S(stoneSize[i], stoneSize[i], stoneSize[i]);;
+        m = worldToViewMatrix * T(cloudPos[i].x, cloudPos[i].y, cloudPos[i].z) * S(cloudSize[i].x, cloudSize[i].y, cloudSize[i].z);
+
+        // Upload the transformation matrix
+        glUniformMatrix4fv(glGetUniformLocation(shader, "camMatrix"), 1, GL_TRUE, m.m);
+        glBindTexture(GL_TEXTURE_2D, stonetex);
+        // Render the stone
+        //DrawModel(stones[i], shader, "in_Position", "in_Normal", "in_TexCoord");
+        DrawPatchModel(cloud[i], shader, "in_Position", "in_Normal", "in_TexCoord");
 
     }
 }
@@ -904,14 +1007,22 @@ gluggModel buildStoneModel(const std::vector<vec3>& vertices) {
 
 std::vector<gluggModel> tree;
 std::vector<vec3> treePos;
+std::vector<int> treeType;
 std::vector<gluggModel> bush;
 std::vector<vec3> bushPos;
+std::vector<int> bushType;
 //gluggModel tree1;
 gluggModel roadModel;
 std::vector<vec3> roadVertices;
 std::vector<Model *> stone;
 std::vector<vec3> stonePos;
 std::vector<vec3> stoneSize;
+std::vector<float> randStone;
+std::vector<Model *> cloud;
+std::vector<vec3> cloudPos;
+std::vector<vec3> cloudSize;
+std::vector<float> randCloud;
+
 
 
 float fract(float x){
@@ -1197,9 +1308,9 @@ void MakeTerrain()
 	for (int z = 0; z < kTerrainSize; z++)
 	{
 	    vec3 v1 = vertices[(z) * kTerrainSize + MAX(x-1,0)];
-	    vec3 v2 = vertices[(z) * kTerrainSize + MIN(x+1,128)];
+	    vec3 v2 = vertices[(z) * kTerrainSize + MIN(x+1,kTerrainSize - 1)];
 	    vec3 v3 = vertices[MAX(z-1,0) * kTerrainSize + (x)];
-	    vec3 v4 = vertices[MIN(z+1,128) * kTerrainSize + (x)];
+	    vec3 v4 = vertices[MIN(z+1,kTerrainSize - 1) * kTerrainSize + (x)];
 	    vec3 Vector1 = v1 - v2;
 	    vec3 Vector2 = v3 - v4;
 	    vec3 normal = cross(Vector1,Vector2);
@@ -1320,14 +1431,6 @@ void init(void)
 			indiceswater, kTerrainSize*kTerrainSize, (kTerrainSize-1)*(kTerrainSize-1)*2*3);
     roadModel = MakeRoad(roadVertices);
 
-    // Upload matrices that we do not intend to change.
-    glUseProgram(stoneShader);
-    generateStones(stone, stonePos, stoneSize ,treePos, bushPos, 100);
-	glUniformMatrix4fv(glGetUniformLocation(stoneShader, "camMatrix"), 1, GL_TRUE, worldToViewMatrix.m);
-	glUniformMatrix4fv(glGetUniformLocation(stoneShader, "projMatrix"), 1, GL_TRUE, projectionMatrix.m);
-	glUniformMatrix4fv(glGetUniformLocation(stoneShader, "mdlMatrix"), 1, GL_TRUE, IdentityMatrix().m);
-
-
 // Important! The shader we upload to must be active!
 	glUseProgram(phongShader);
 	glUniformMatrix4fv(glGetUniformLocation(phongShader, "projectionMatrix"), 1, GL_TRUE, projectionMatrix.m);
@@ -1336,19 +1439,34 @@ void init(void)
 
 	glUniform1i(glGetUniformLocation(texShader, "tex"), 0); // Texture unit 0
 
-	LoadTGATextureSimple("grass.tga", &grasstex);
+
+	LoadTGATextureSimple("grassNew.tga", &grasstex);
 	glBindTexture(GL_TEXTURE_2D, grasstex);
 	glTexParameteri(GL_TEXTURE_2D,	GL_TEXTURE_WRAP_S,	GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D,	GL_TEXTURE_WRAP_T,	GL_REPEAT);
 
-	LoadTGATextureSimple("bark3.tga", &barktex);
+	LoadTGATextureSimple("bark2.tga", &barktex);
 
 	LoadTGATextureSimple("water.tga", &watertex);
 
 	LoadTGATextureSimple("ivyleaf.tga", &leaftex);
 
-    generateTrees(tree, treePos, 5);
-    generateBush(bush, bushPos, treePos, 5);
+	LoadTGATextureSimple("granite.tga", &stonetex);
+
+	LoadTGATextureSimple("bjorkbjork.tga", &bjorktex);
+
+	LoadTGATextureSimple("bark4.tga", &bark4tex);
+
+    generateTrees(tree, treePos, treeType, 300);
+    generateBush(bush, bushPos, treePos, bushType, 300);
+
+    glUseProgram(stoneShader);
+    generateStones(stone, stonePos, stoneSize ,treePos, bushPos, randStone, 100);
+    generateClouds(cloud, cloudPos, cloudSize, randCloud, 20);
+	glUniformMatrix4fv(glGetUniformLocation(stoneShader, "camMatrix"), 1, GL_TRUE, worldToViewMatrix.m);
+	glUniformMatrix4fv(glGetUniformLocation(stoneShader, "projMatrix"), 1, GL_TRUE, projectionMatrix.m);
+	glUniformMatrix4fv(glGetUniformLocation(stoneShader, "mdlMatrix"), 1, GL_TRUE, IdentityMatrix().m);
+
 
 	//tree = MakeTree();
 	//tree1 = MakeTree();
@@ -1423,7 +1541,6 @@ void display(void)
 	glUseProgram(texShader);
 	m = worldToView;
 	glUniformMatrix4fv(glGetUniformLocation(texShader, "modelviewMatrix"), 1, GL_TRUE, m.m);
-	glUseProgram(stoneShader);
 
 	DrawModel(floormodel, texShader, "inPosition", "inNormal", "inTexCoord");
 
@@ -1433,14 +1550,15 @@ void display(void)
     DrawModel(watermodel, texShader, "inPosition", "inNormal", "inTexCoord");
 
 	// Draw the tree, as defined on MakeTree
-	glBindTexture(GL_TEXTURE_2D, barktex);
+	//glBindTexture(GL_TEXTURE_2D, barktex);
 	glUseProgram(texShader);
-
-    buildTrees(worldToView, texShader, tree, treePos);
-    buildBush(worldToView, texShader, bush, bushPos);
+    buildTrees(worldToView, texShader, tree, treePos, treeType);
+    buildBush(worldToView, texShader, bush, bushPos, bushType);
 
     glUseProgram(stoneShader);
-    buildStone(worldToView, stone, stonePos, stoneSize, stoneShader);
+
+    buildStone(worldToView, stone, stonePos, stoneSize, randStone, stoneShader);
+    buildCloud(worldToView, cloud, cloudPos, cloudSize, randCloud, stoneShader);
 
     buildRoad(roadModel, worldToView);
 

@@ -13,6 +13,7 @@ uniform sampler2D tex;
 uniform mat4 projMatrix;
 uniform mat4 mdlMatrix;
 
+
 //test
 //uniform mat4 camMatrix;
 
@@ -98,7 +99,7 @@ float fbm(vec3 pos, float scale){
 
     int numOctaves = 8;
     for(int i = 0; i < numOctaves; i++){
-        t += a * smoothVoronoi(pos * f);
+        t += a * smoothVoronoi(pos * f) * 3;
         f *= 2.0;
         a*= G;
     }
