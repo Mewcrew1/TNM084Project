@@ -136,7 +136,7 @@ void computeVertex(int nr)
 	vec3 ortvec2 = cross(normvec, ortvec1);
 	//Kanske fel
 	vec3 ortvec3 = 0.5 * (-ortvec1 - ortvec2);
-	float stepsize = 0.05;
+	float stepsize = 0.25;
 	ortvec1 *= stepsize;
 	ortvec2 *= stepsize;
 	ortvec3 *= stepsize;
