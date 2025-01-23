@@ -359,8 +359,10 @@
 
 1733142947 c:\users\simon\tnm084\tnm084project\tnm084 labs\common\windows\microglut.h
 
-1736246798 source:c:\users\simon\tnm084\tnm084project\tnm084 labs\lab 3a\lab3a.cpp
+1737035449 source:c:\users\simon\tnm084\tnm084project\tnm084 labs\lab 3a\lab3a.cpp
+	<iostream>
 	<vector>
+	<cstdlib>
 	"MicroGlut.h"
 	"GL_utilities.h"
 	"VectorUtils4.h"
